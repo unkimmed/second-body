@@ -1,0 +1,16 @@
+{
+  "name": "second-body",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "mobile": "pnpm --filter mobile start",
+    "mobile:ios": "pnpm --filter mobile ios",
+    "mobile:android": "pnpm --filter mobile android",
+    "api": "pnpm --filter api start:dev",
+    "api:build": "pnpm --filter api build",
+    "shared:build": "pnpm --filter @second-body/shared build"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
