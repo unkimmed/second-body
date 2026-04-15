@@ -23,6 +23,10 @@
       },
       "package": "com.secondbody.app"
     },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
     "plugins": [
       "expo-router"
     ],
