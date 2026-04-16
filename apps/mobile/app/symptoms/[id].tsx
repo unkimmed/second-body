@@ -6,6 +6,7 @@ import {
   Alert,
 } from "react-native";
 import { Text } from "../../components/Text";
+import { Colors } from "../../constants/theme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Symptom } from "@second-body/shared";
@@ -54,7 +55,7 @@ export default function SymptomDetailScreen() {
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#6366f1" />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -62,40 +63,40 @@ export default function SymptomDetailScreen() {
   if (!symptom) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text className="text-gray-400">증상을 찾을 수 없습니다.</Text>
+        <Text className="text-on-surface-variant">증상을 찾을 수 없습니다.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <ScrollView className="flex-1 bg-surface-lowest">
       {/* 심각도 컬러 배너 */}
       <View className={`px-5 py-6 ${SEVERITY_COLOR[symptom.severity]}`}>
-        <Text className="text-white text-3xl font-bold">{symptom.title}</Text>
-        <Text className="text-white/80 mt-1">{symptom.date}</Text>
+        <Text className="text-surface text-3xl font-bold">{symptom.title}</Text>
+        <Text className="text-surface/80 mt-1">{symptom.date}</Text>
       </View>
 
       <View className="p-5 gap-4">
         {/* 메타 정보 */}
         <View className="flex-row gap-3">
-          <View className="flex-1 bg-gray-50 rounded-xl p-4">
-            <Text className="text-xs text-gray-400 mb-1">신체 부위</Text>
-            <Text className="text-base font-semibold">
+          <View className="flex-1 bg-surface-low rounded-xl p-4">
+            <Text className="text-xs text-on-surface-variant mb-1">신체 부위</Text>
+            <Text className="text-base font-semibold text-on-surface">
               {BODY_PART_LABELS[symptom.body_part]}
             </Text>
           </View>
-          <View className="flex-1 bg-gray-50 rounded-xl p-4">
-            <Text className="text-xs text-gray-400 mb-1">심각도</Text>
-            <Text className="text-base font-semibold">
+          <View className="flex-1 bg-surface-low rounded-xl p-4">
+            <Text className="text-xs text-on-surface-variant mb-1">심각도</Text>
+            <Text className="text-base font-semibold text-on-surface">
               {symptom.severity} / 5
             </Text>
           </View>
         </View>
 
         {/* 상세 설명 */}
-        <View className="bg-gray-50 rounded-xl p-4">
-          <Text className="text-xs text-gray-400 mb-2">상세 설명</Text>
-          <Text className="text-base text-gray-700 leading-relaxed">
+        <View className="bg-surface-low rounded-xl p-4">
+          <Text className="text-xs text-on-surface-variant mb-2">상세 설명</Text>
+          <Text className="text-base text-on-surface leading-relaxed">
             {symptom.description}
           </Text>
         </View>
@@ -105,7 +106,7 @@ export default function SymptomDetailScreen() {
           onPress={handleDelete}
           className="border border-red-200 py-4 rounded-2xl items-center mt-4"
         >
-          <Text className="text-red-500 font-medium">기록 삭제</Text>
+          <Text className="text-danger font-medium">기록 삭제</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { FontFamily, FontWeight } from "../constants/theme";
+import { Colors, FontFamily, FontWeight } from "../constants/theme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,8 +30,8 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#6366f1" },
-          headerTintColor: "#fff",
+          headerStyle: { backgroundColor: Colors.primary },
+          headerTintColor: Colors.surface,
           headerTitleStyle: {
             fontFamily: FontFamily.base,
             fontWeight: FontWeight.bold,

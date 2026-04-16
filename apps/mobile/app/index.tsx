@@ -9,6 +9,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { SymptomCard } from "../components/SymptomCard";
 import { Symptom } from "@second-body/shared";
+import { Colors } from "../constants/theme";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000/api";
 
@@ -40,8 +41,8 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#6366f1" />
+      <View className="flex-1 items-center justify-center bg-surface-lowest">
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -54,11 +55,11 @@ export default function HomeScreen() {
      * - FlatList → 긴 목록 (virtualized, 브라우저의 ul/li와 달리 성능 최적화)
      * - TouchableOpacity → button (누르면 투명도 효과)
      */
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-surface">
       {/* 헤더 요약 */}
       <View className="bg-primary px-5 pb-6 pt-4">
-        <Text className="text-white text-2xl font-bold">내 증상 기록</Text>
-        <Text className="text-indigo-200 mt-1">
+        <Text className="text-surface text-2xl font-bold">내 증상 기록</Text>
+        <Text className="text-on-surface-variant mt-1">
           총 {symptoms.length}개의 기록
         </Text>
       </View>
@@ -76,10 +77,10 @@ export default function HomeScreen() {
         contentContainerClassName="p-4 gap-3"
         ListEmptyComponent={
           <View className="items-center justify-center py-20">
-            <Text className="text-gray-400 text-lg">
+            <Text className="text-on-surface-variant text-lg">
               아직 기록된 증상이 없어요
             </Text>
-            <Text className="text-gray-400 mt-1">
+            <Text className="text-on-surface-variant mt-1">
               아래 버튼으로 첫 증상을 기록해보세요!
             </Text>
           </View>
@@ -91,7 +92,7 @@ export default function HomeScreen() {
         className="absolute bottom-8 right-6 bg-primary w-14 h-14 rounded-full items-center justify-center shadow-lg"
         onPress={() => router.push("/symptoms/new")}
       >
-        <Text className="text-white text-3xl leading-none">+</Text>
+        <Text className="text-surface text-3xl leading-none">+</Text>
       </TouchableOpacity>
     </View>
   );

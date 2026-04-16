@@ -15,10 +15,24 @@ module.exports = {
         ],
       },
       colors: {
-        primary: "#6366f1", // 인디고 (메인 색상)
-        danger: "#ef4444", // 빨강 (높은 심각도)
-        warning: "#f59e0b", // 노랑 (중간 심각도)
-        success: "#22c55e", // 초록 (낮은 심각도)
+        // Surface hierarchy
+        surface: "#fbf9f5",
+        "surface-low": "#f5f4ef",
+        "surface-lowest": "#ffffff",
+        "surface-container": "#f0efe9",
+        "surface-high": "#e9e8e3",
+        // Primary
+        primary: "#456373",
+        "primary-dim": "#395767",
+        // On-surface
+        "on-surface": "#31332f",
+        "on-surface-variant": "#5e605b",
+        // Outline
+        "outline-variant": "#b2b2ac",
+        // Semantic
+        danger: "#ef4444",
+        warning: "#f59e0b",
+        success: "#22c55e",
       },
     },
   },

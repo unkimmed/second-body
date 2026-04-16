@@ -74,15 +74,15 @@ export default function NewSymptomScreen() {
      * 키보드가 올라올 때 입력 필드가 가려지지 않도록 keyboardShouldPersistTaps 설정
      */
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-surface-lowest"
       contentContainerClassName="p-5 gap-5"
       keyboardShouldPersistTaps="handled"
     >
       {/* 날짜 */}
       <View>
-        <Text className="text-sm font-medium text-gray-600 mb-1">날짜</Text>
+        <Text className="text-sm font-medium text-on-surface-variant mb-1">날짜</Text>
         <TextInput
-          className="border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50"
+          className="border border-outline-variant rounded-xl px-4 py-3 text-base bg-surface-low"
           value={form.date}
           onChangeText={(v) => setForm((p) => ({ ...p, date: v }))}
           placeholder="YYYY-MM-DD"
@@ -91,7 +91,7 @@ export default function NewSymptomScreen() {
 
       {/* 신체 부위 선택 */}
       <View>
-        <Text className="text-sm font-medium text-gray-600 mb-2">
+        <Text className="text-sm font-medium text-on-surface-variant mb-2">
           신체 부위
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -102,14 +102,14 @@ export default function NewSymptomScreen() {
               className={`px-4 py-2 rounded-full border ${
                 form.body_part === value
                   ? "bg-primary border-primary"
-                  : "bg-white border-gray-200"
+                  : "bg-surface-lowest border-outline-variant"
               }`}
             >
               <Text
                 className={`text-sm ${
                   form.body_part === value
-                    ? "text-white font-medium"
-                    : "text-gray-600"
+                    ? "text-surface font-medium"
+                    : "text-on-surface-variant"
                 }`}
               >
                 {label}
@@ -121,7 +121,7 @@ export default function NewSymptomScreen() {
 
       {/* 심각도 */}
       <View>
-        <Text className="text-sm font-medium text-gray-600 mb-2">
+        <Text className="text-sm font-medium text-on-surface-variant mb-2">
           심각도:{" "}
           <Text className="text-primary">
             {SEVERITY_LABELS[form.severity as Severity]}
@@ -133,12 +133,14 @@ export default function NewSymptomScreen() {
               key={s}
               onPress={() => setForm((p) => ({ ...p, severity: s }))}
               className={`flex-1 py-3 rounded-xl items-center ${
-                form.severity === s ? "bg-primary" : "bg-gray-100"
+                form.severity === s ? "bg-primary" : "bg-surface-high"
               }`}
             >
               <Text
                 className={
-                  form.severity === s ? "text-white font-bold" : "text-gray-500"
+                  form.severity === s
+                    ? "text-surface font-bold"
+                    : "text-on-surface-variant"
                 }
               >
                 {s}
@@ -150,11 +152,11 @@ export default function NewSymptomScreen() {
 
       {/* 제목 */}
       <View>
-        <Text className="text-sm font-medium text-gray-600 mb-1">
+        <Text className="text-sm font-medium text-on-surface-variant mb-1">
           증상 제목
         </Text>
         <TextInput
-          className="border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50"
+          className="border border-outline-variant rounded-xl px-4 py-3 text-base bg-surface-low"
           value={form.title}
           onChangeText={(v) => setForm((p) => ({ ...p, title: v }))}
           placeholder="예: 두통, 복통, 무릎 통증"
@@ -163,11 +165,11 @@ export default function NewSymptomScreen() {
 
       {/* 상세 설명 */}
       <View>
-        <Text className="text-sm font-medium text-gray-600 mb-1">
+        <Text className="text-sm font-medium text-on-surface-variant mb-1">
           상세 설명
         </Text>
         <TextInput
-          className="border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50"
+          className="border border-outline-variant rounded-xl px-4 py-3 text-base bg-surface-low"
           value={form.description}
           onChangeText={(v) => setForm((p) => ({ ...p, description: v }))}
           placeholder="어떤 상황에서 발생했는지, 어떤 느낌인지 기록해보세요"
@@ -182,10 +184,10 @@ export default function NewSymptomScreen() {
         onPress={handleSubmit}
         disabled={submitting}
         className={`py-4 rounded-2xl items-center mt-2 ${
-          submitting ? "bg-indigo-300" : "bg-primary"
+          submitting ? "bg-primary-dim" : "bg-primary"
         }`}
       >
-        <Text className="text-white text-base font-bold">
+        <Text className="text-surface text-base font-bold">
           {submitting ? "저장 중..." : "증상 기록 저장"}
         </Text>
       </TouchableOpacity>

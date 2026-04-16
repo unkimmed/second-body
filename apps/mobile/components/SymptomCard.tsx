@@ -18,7 +18,7 @@ export function SymptomCard({ symptom, onPress }: Props) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+      className="bg-surface-lowest rounded-2xl shadow-sm border border-outline-variant overflow-hidden"
       activeOpacity={0.7}
     >
       {/* 왼쪽 심각도 컬러 바 */}
@@ -27,28 +27,28 @@ export function SymptomCard({ symptom, onPress }: Props) {
 
         <View className="flex-1 p-4">
           <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-gray-800 flex-1 mr-2">
+            <Text className="text-base font-semibold text-on-surface flex-1 mr-2">
               {symptom.title}
             </Text>
-            <Text className="text-xs text-gray-400">{symptom.date}</Text>
+            <Text className="text-xs text-on-surface-variant">{symptom.date}</Text>
           </View>
 
           <View className="flex-row items-center gap-2 mt-2">
             {/* 신체 부위 태그 */}
-            <View className="bg-indigo-50 px-2 py-0.5 rounded-full">
+            <View className="bg-surface-low px-2 py-0.5 rounded-full">
               <Text className="text-xs text-primary font-medium">
                 {BODY_PART_LABELS[symptom.body_part]}
               </Text>
             </View>
 
             {/* 심각도 표시 */}
-            <Text className="text-xs text-gray-400">
+            <Text className="text-xs text-on-surface-variant">
               심각도 {symptom.severity}/5
             </Text>
           </View>
 
           {/* 설명 미리보기 */}
-          <Text className="text-sm text-gray-500 mt-2" numberOfLines={1}>
+          <Text className="text-sm text-on-surface-variant mt-2" numberOfLines={1}>
             {symptom.description}
           </Text>
         </View>
