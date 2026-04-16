@@ -1,13 +1,19 @@
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { SymptomCard } from '../components/SymptomCard';
-import { Symptom } from '@second-body/shared';
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Text } from "../components/Text";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { SymptomCard } from "../components/SymptomCard";
+import { Symptom } from "@second-body/shared";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000/api";
 
 // 임시 유저 ID (나중에 Supabase Auth로 교체)
-const TEMP_USER_ID = 'user-001';
+const TEMP_USER_ID = "user-001";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -21,12 +27,12 @@ export default function HomeScreen() {
   async function fetchSymptoms() {
     try {
       const res = await fetch(`${API_URL}/symptoms`, {
-        headers: { 'x-user-id': TEMP_USER_ID },
+        headers: { "x-user-id": TEMP_USER_ID },
       });
       const data = await res.json();
-      setSymptoms(data);
+      setSymptoms(data as Symptom[]);
     } catch (e) {
-      console.error('증상 목록 불러오기 실패:', e);
+      console.error("증상 목록 불러오기 실패:", e);
     } finally {
       setLoading(false);
     }
@@ -70,8 +76,12 @@ export default function HomeScreen() {
         contentContainerClassName="p-4 gap-3"
         ListEmptyComponent={
           <View className="items-center justify-center py-20">
-            <Text className="text-gray-400 text-lg">아직 기록된 증상이 없어요</Text>
-            <Text className="text-gray-400 mt-1">아래 버튼으로 첫 증상을 기록해보세요!</Text>
+            <Text className="text-gray-400 text-lg">
+              아직 기록된 증상이 없어요
+            </Text>
+            <Text className="text-gray-400 mt-1">
+              아래 버튼으로 첫 증상을 기록해보세요!
+            </Text>
           </View>
         }
       />
@@ -79,7 +89,7 @@ export default function HomeScreen() {
       {/* 새 증상 기록 버튼 (우측 하단 고정) */}
       <TouchableOpacity
         className="absolute bottom-8 right-6 bg-primary w-14 h-14 rounded-full items-center justify-center shadow-lg"
-        onPress={() => router.push('/symptoms/new')}
+        onPress={() => router.push("/symptoms/new")}
       >
         <Text className="text-white text-3xl leading-none">+</Text>
       </TouchableOpacity>

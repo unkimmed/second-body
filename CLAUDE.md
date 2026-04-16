@@ -83,6 +83,16 @@ Schema lives in `supabase/schema.sql`. The `symptoms` table has: `id`, `user_id`
 | `EXPO_PUBLIC_API_URL` | Mobile | API endpoint (default: `http://localhost:3000/api`) |
 | `PORT` | API | Server port (default: 3000) |
 
+## pnpm + Expo Web Gotchas
+
+Web support requires `react-dom`, `react-native-web` in `apps/mobile/package.json`. Due to pnpm's strict isolation, expo-router's SSR renderer can't find packages it doesn't explicitly declare. Workarounds in place:
+
+- `package.json` root has `pnpm.packageExtensions` that adds missing peer deps to `expo-router` (`react-dom`, `escape-string-regexp`)
+- `apps/mobile/metro.config.js` has `extraNodeModules` pointing `react-dom` to the local install
+- `.npmrc` has `public-hoist-pattern[]=react-dom`
+
+If adding new dependencies that expo-router's node renderer needs, add them to `pnpm.packageExtensions["expo-router"].peerDependencies` in root `package.json` and re-run `pnpm install`.
+
 ## Known Limitations
 
 - **Auth is temporary**: Mobile hardcodes `TEMP_USER_ID = 'user-001'` and sends it as `x-user-id` header; real JWT auth is not yet implemented

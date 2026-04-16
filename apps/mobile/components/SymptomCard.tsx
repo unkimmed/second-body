@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Symptom } from '@second-body/shared';
-import { BODY_PART_LABELS, SEVERITY_COLOR } from '../constants/symptom';
+import { View, TouchableOpacity } from "react-native";
+import { Text } from "./Text";
+import { Symptom } from "@second-body/shared";
+import { BODY_PART_LABELS, SEVERITY_COLOR } from "../constants/symptom";
 
 interface Props {
   symptom: Symptom;

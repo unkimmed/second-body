@@ -1,6 +1,6 @@
-import 'react-native-url-polyfill/auto';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import "react-native-url-polyfill/auto";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createClient } from "@supabase/supabase-js";
 
 // 앱에서는 anon key 사용 (service_role 키는 절대 사용 X)
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;

@@ -1,11 +1,18 @@
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Symptom } from '@second-body/shared';
-import { BODY_PART_LABELS, SEVERITY_COLOR } from '../../constants/symptom';
+import {
+  View,
+  ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Text } from "../../components/Text";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Symptom } from "@second-body/shared";
+import { BODY_PART_LABELS, SEVERITY_COLOR } from "../../constants/symptom";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api';
-const TEMP_USER_ID = 'user-001';
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000/api";
+const TEMP_USER_ID = "user-001";
 
 export default function SymptomDetailScreen() {
   /**
@@ -19,24 +26,24 @@ export default function SymptomDetailScreen() {
 
   useEffect(() => {
     fetch(`${API_URL}/symptoms/${id}`, {
-      headers: { 'x-user-id': TEMP_USER_ID },
+      headers: { "x-user-id": TEMP_USER_ID },
     })
       .then((r) => r.json())
-      .then(setSymptom)
+      .then((data) => setSymptom(data as Symptom))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
 
   async function handleDelete() {
-    Alert.alert('삭제 확인', '이 증상 기록을 삭제할까요?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert("삭제 확인", "이 증상 기록을 삭제할까요?", [
+      { text: "취소", style: "cancel" },
       {
-        text: '삭제',
-        style: 'destructive',
+        text: "삭제",
+        style: "destructive",
         onPress: async () => {
           await fetch(`${API_URL}/symptoms/${id}`, {
-            method: 'DELETE',
-            headers: { 'x-user-id': TEMP_USER_ID },
+            method: "DELETE",
+            headers: { "x-user-id": TEMP_USER_ID },
           });
           router.back();
         },
@@ -79,7 +86,9 @@ export default function SymptomDetailScreen() {
           </View>
           <View className="flex-1 bg-gray-50 rounded-xl p-4">
             <Text className="text-xs text-gray-400 mb-1">심각도</Text>
-            <Text className="text-base font-semibold">{symptom.severity} / 5</Text>
+            <Text className="text-base font-semibold">
+              {symptom.severity} / 5
+            </Text>
           </View>
         </View>
 

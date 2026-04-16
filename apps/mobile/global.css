@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Pretendard Variable — loaded via useFonts (expo-font) for all platforms.
+   This body rule ensures CSS cascade applies to web elements without explicit fontFamily. */
+html,
+body {
+  font-family: "Pretendard Variable", ui-sans-serif, system-ui, sans-serif;
+}
