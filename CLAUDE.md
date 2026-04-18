@@ -47,9 +47,10 @@ Mobile App (React Native)
 
 NestJS modules with a standard Controller → Service → Supabase pattern:
 
-- `app.module.ts` — Wires `ConfigModule`, `SupabaseModule`, `SymptomsModule`
+- `app.module.ts` — Wires `ConfigModule`, `SupabaseModule`, `RecordsModule`, `BodyPartsModule`
 - `supabase/` — Global `SupabaseService` using `service_role` key
-- `symptoms/` — CRUD endpoints at `/api/symptoms`, with DTOs validated by `class-validator`
+- `records/` — CRUD endpoints at `/api/records`, with DTOs validated by `class-validator`
+- `body-parts/` — Read-only endpoint at `/api/body-parts` (body_parts master table)
 - Global route prefix `/api`, CORS enabled
 
 ### Mobile App (`apps/mobile/app/`)
@@ -66,11 +67,19 @@ File-based routing via Expo Router (similar to Next.js):
 
 ### Shared Types (`packages/shared/src/types/symptom.ts`)
 
-Defines `BodyPart`, `Severity`, `Symptom`, `CreateSymptomDto`, `UpdateSymptomDto`. Must run `pnpm shared:build` after changes before the other apps can pick them up.
+Defines `BodyPartCode` (26 body part codes), `Severity`, `BodyPart`, `SymptomDetail`, `SymptomRecord`, `CreateSymptomDetailDto`, `CreateSymptomRecordDto`, `UpdateSymptomRecordDto`. Must run `pnpm shared:build` after changes before the other apps can pick them up.
 
 ### Database
 
-Schema lives in `supabase/schema.sql`. The `symptoms` table has: `id`, `user_id`, `date`, `body_part`, `severity`, `title`, `description`, `created_at`, `updated_at`. Composite index on `(user_id, date DESC)`.
+Schema lives in `supabase/schema.sql`. Tables:
+
+- `body_parts` — Master table of 26 body part codes (seed data, read-only)
+- `users` — App-specific user profile, 1:1 with `auth.users`
+- `avatars` — One avatar per user (skin_tone, gender)
+- `symptom_records` — Daily record header; unique `(user_id, record_date)`
+- `symptom_details` — Per-body-part symptom within a record (body_part_code FK → body_parts, severity 1–5)
+
+RLS is enabled on all tables. API uses `service_role` key (bypasses RLS server-side).
 
 ## Environment Variables
 
@@ -80,8 +89,8 @@ Schema lives in `supabase/schema.sql`. The `symptoms` table has: `id`, `user_id`
 | `SUPABASE_SERVICE_ROLE_KEY` | API | Server-side full-access key (never expose) |
 | `EXPO_PUBLIC_SUPABASE_URL` | Mobile | Supabase project URL |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Mobile | Client-side anon key |
-| `EXPO_PUBLIC_API_URL` | Mobile | API endpoint (default: `http://localhost:3000/api`) |
-| `PORT` | API | Server port (default: 3000) |
+| `EXPO_PUBLIC_API_URL` | Mobile | API endpoint (default: `http://localhost:3001/api`) |
+| `PORT` | API | Server port (default: 3001) |
 
 ## pnpm + Expo Web Gotchas
 
@@ -96,5 +105,5 @@ If adding new dependencies that expo-router's node renderer needs, add them to `
 ## Known Limitations
 
 - **Auth is temporary**: Mobile hardcodes `TEMP_USER_ID = 'user-001'` and sends it as `x-user-id` header; real JWT auth is not yet implemented
-- **RLS disabled**: Supabase Row Level Security is commented out in `schema.sql`, pending proper auth
+- **RLS enabled**: Supabase Row Level Security is active; API bypasses it via `service_role` key
 - No tests or linting configured
