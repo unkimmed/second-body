@@ -75,8 +75,8 @@ CREATE TABLE public.avatars (
   avatar_name TEXT        NOT NULL,
   skin_tone   TEXT        NOT NULL DEFAULT 'medium'
                 CHECK (skin_tone IN ('light', 'medium_light', 'medium', 'medium_dark', 'dark')),
-  gender      TEXT        NOT NULL DEFAULT 'neutral'
-                CHECK (gender IN ('male', 'female', 'neutral')),
+  gender      TEXT        NOT NULL DEFAULT 'male'
+                CHECK (gender IN ('male', 'female')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

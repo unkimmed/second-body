@@ -1,3 +1,5 @@
+export type AvatarGender = 'male' | 'female';
+
 export type BodyPartCode =
   | 'head'
   | 'neck'

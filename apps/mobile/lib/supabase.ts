@@ -1,15 +1,34 @@
 import "react-native-url-polyfill/auto";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
-// 앱에서는 anon key 사용 (service_role 키는 절대 사용 X)
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
-// AsyncStorage → 세션 토큰을 기기에 저장해서 앱 재시작 후에도 로그인 유지
+// Native: AsyncStorage 사용
+// Web: SSR(Node) 환경에서 window가 없으므로 localStorage를 직접 접근하되 guard 처리
+function makeStorage() {
+  if (Platform.OS !== "web") return AsyncStorage;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ls = (globalThis as any).localStorage as any;
+  return {
+    getItem: (key: string) => Promise.resolve(ls?.getItem(key) ?? null),
+    setItem: (key: string, value: string) => {
+      ls?.setItem(key, value);
+      return Promise.resolve();
+    },
+    removeItem: (key: string) => {
+      ls?.removeItem(key);
+      return Promise.resolve();
+    },
+  };
+}
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: AsyncStorage,
+    storage: makeStorage(),
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
