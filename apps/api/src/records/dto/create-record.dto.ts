@@ -16,19 +16,20 @@ import {
   CreateSymptomRecordDto as ICreateSymptomRecordDto,
 } from '@second-body/shared';
 
+// 증상 기록 단위는 L3 코드만 허용
 const BODY_PART_CODES: BodyPartCode[] = [
-  'head', 'neck',
-  'left_shoulder', 'right_shoulder',
-  'left_upper_arm', 'right_upper_arm',
-  'left_elbow', 'right_elbow',
-  'left_forearm', 'right_forearm',
-  'left_wrist', 'right_wrist',
-  'chest', 'abdomen', 'upper_back', 'lower_back',
-  'left_hip', 'right_hip',
-  'left_thigh', 'right_thigh',
-  'left_knee', 'right_knee',
-  'left_calf', 'right_calf',
-  'left_ankle', 'right_ankle',
+  // 머리·목
+  'head', 'eye', 'nose', 'mouth', 'ear', 'skin_face', 'neck',
+  // 왼쪽 팔
+  'left_shoulder', 'left_upper_arm', 'left_elbow', 'left_forearm', 'left_wrist', 'left_hand',
+  // 오른쪽 팔
+  'right_shoulder', 'right_upper_arm', 'right_elbow', 'right_forearm', 'right_wrist', 'right_hand',
+  // 몸통
+  'chest', 'abdomen', 'back', 'lower_back', 'pelvis', 'hip', 'genitalia',
+  // 왼쪽 다리
+  'left_thigh', 'left_knee', 'left_calf', 'left_ankle', 'left_foot',
+  // 오른쪽 다리
+  'right_thigh', 'right_knee', 'right_calf', 'right_ankle', 'right_foot',
 ];
 
 export class CreateSymptomDetailDto implements ICreateSymptomDetailDto {

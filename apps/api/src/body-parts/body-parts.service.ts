@@ -10,7 +10,8 @@ export class BodyPartsService {
     const { data, error } = await this.supabase.client
       .from('body_parts')
       .select('*')
-      .order('code');
+      .order('level')
+      .order('display_order');
 
     if (error) throw new Error(error.message);
     return data as BodyPart[];

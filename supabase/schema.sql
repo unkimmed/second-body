@@ -12,44 +12,96 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- gen_random_uuid()
 
 
 -- ============================================================
--- 1. BODY_PARTS (신체 부위 마스터)
--- 앱 전체에서 공유하는 고정 데이터. seed로 주입 후 변경 거의 없음.
+-- 1. BODY_PARTS (신체 부위 마스터) v4
+-- L1 :  1개 (전신)
+-- L2 :  6개 (부위 그룹)
+-- L3 : 37개 (증상 기록 단위)
+-- 전체: 44개
 -- ============================================================
 
 CREATE TABLE public.body_parts (
-  code      TEXT PRIMARY KEY,   -- 'head', 'left_shoulder' 등. SVG path id와 1:1 매칭
-  name_ko   TEXT NOT NULL,      -- '머리', '왼쪽 어깨'
-  category  TEXT NOT NULL       -- 'head' | 'torso' | 'arm' | 'leg'
+  code          TEXT PRIMARY KEY,
+  name_ko       TEXT NOT NULL,
+  level         INT  NOT NULL CHECK (level IN (1, 2, 3)),
+  parent_code   TEXT REFERENCES public.body_parts(code),
+  side          TEXT CHECK (side IN ('left', 'right', 'center')),
+  svg_path_id   TEXT,
+  display_order INT  NOT NULL DEFAULT 0,
+
+  CONSTRAINT level_parent_check CHECK (
+    (level = 1 AND parent_code IS NULL) OR
+    (level > 1 AND parent_code IS NOT NULL)
+  )
 );
 
--- Seed data
-INSERT INTO public.body_parts (code, name_ko, category) VALUES
-  ('head',           '머리',       'head'),
-  ('neck',           '목',         'head'),
-  ('left_shoulder',  '왼쪽 어깨',  'arm'),
-  ('right_shoulder', '오른쪽 어깨','arm'),
-  ('left_upper_arm', '왼쪽 팔뚝',  'arm'),
-  ('right_upper_arm','오른쪽 팔뚝','arm'),
-  ('left_elbow',     '왼쪽 팔꿈치','arm'),
-  ('right_elbow',    '오른쪽 팔꿈치','arm'),
-  ('left_forearm',   '왼쪽 아래팔','arm'),
-  ('right_forearm',  '오른쪽 아래팔','arm'),
-  ('left_wrist',     '왼쪽 손목',  'arm'),
-  ('right_wrist',    '오른쪽 손목','arm'),
-  ('chest',          '가슴',       'torso'),
-  ('abdomen',        '복부',       'torso'),
-  ('upper_back',     '등 위',      'torso'),
-  ('lower_back',     '허리',       'torso'),
-  ('left_hip',       '왼쪽 엉덩이','leg'),
-  ('right_hip',      '오른쪽 엉덩이','leg'),
-  ('left_thigh',     '왼쪽 허벅지','leg'),
-  ('right_thigh',    '오른쪽 허벅지','leg'),
-  ('left_knee',      '왼쪽 무릎',  'leg'),
-  ('right_knee',     '오른쪽 무릎','leg'),
-  ('left_calf',      '왼쪽 종아리','leg'),
-  ('right_calf',     '오른쪽 종아리','leg'),
-  ('left_ankle',     '왼쪽 발목',  'leg'),
-  ('right_ankle',    '오른쪽 발목','leg');
+-- L1 — 전신 (1개)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('body', '전신', 1, NULL, NULL, 'svg-body', 0);
+
+-- L2 — 부위 그룹 (6개)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('head_neck',  '머리·목',     2, 'body', 'center', 'svg-head-neck',  1),
+  ('left_arm',   '왼쪽 팔',     2, 'body', 'left',   'svg-left-arm',   2),
+  ('right_arm',  '오른쪽 팔',   2, 'body', 'right',  'svg-right-arm',  3),
+  ('torso',      '몸통',        2, 'body', 'center', 'svg-torso',      4),
+  ('left_leg',   '왼쪽 다리',   2, 'body', 'left',   'svg-left-leg',   5),
+  ('right_leg',  '오른쪽 다리', 2, 'body', 'right',  'svg-right-leg',  6);
+
+-- L3 — 세부 부위 (37개)
+
+-- 머리·목 (7)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('head',      '머리', 3, 'head_neck', 'center', 'svg-head',  1),
+  ('eye',       '눈',   3, 'head_neck', 'center', 'svg-eye',   2),
+  ('nose',      '코',   3, 'head_neck', 'center', 'svg-nose',  3),
+  ('mouth',     '입',   3, 'head_neck', 'center', 'svg-mouth', 4),
+  ('ear',       '귀',   3, 'head_neck', 'center', 'svg-ear',   5),
+  ('skin_face', '피부', 3, 'head_neck', 'center', 'svg-skin',  6),
+  ('neck',      '목',   3, 'head_neck', 'center', 'svg-neck',  7);
+
+-- 왼쪽 팔 (6)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('left_shoulder',  '어깨',   3, 'left_arm', 'left', 'svg-l-shoulder',  1),
+  ('left_upper_arm', '위팔',   3, 'left_arm', 'left', 'svg-l-upper-arm', 2),
+  ('left_elbow',     '팔꿈치', 3, 'left_arm', 'left', 'svg-l-elbow',     3),
+  ('left_forearm',   '아래팔', 3, 'left_arm', 'left', 'svg-l-forearm',   4),
+  ('left_wrist',     '손목',   3, 'left_arm', 'left', 'svg-l-wrist',     5),
+  ('left_hand',      '손',     3, 'left_arm', 'left', 'svg-l-hand',      6);
+
+-- 오른쪽 팔 (6)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('right_shoulder',  '어깨',   3, 'right_arm', 'right', 'svg-r-shoulder',  1),
+  ('right_upper_arm', '위팔',   3, 'right_arm', 'right', 'svg-r-upper-arm', 2),
+  ('right_elbow',     '팔꿈치', 3, 'right_arm', 'right', 'svg-r-elbow',     3),
+  ('right_forearm',   '아래팔', 3, 'right_arm', 'right', 'svg-r-forearm',   4),
+  ('right_wrist',     '손목',   3, 'right_arm', 'right', 'svg-r-wrist',     5),
+  ('right_hand',      '손',     3, 'right_arm', 'right', 'svg-r-hand',      6);
+
+-- 몸통 (7)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('chest',      '가슴',   3, 'torso', 'center', 'svg-chest',      1),
+  ('abdomen',    '배',     3, 'torso', 'center', 'svg-abdomen',    2),
+  ('back',       '등',     3, 'torso', 'center', 'svg-back',       3),
+  ('lower_back', '허리',   3, 'torso', 'center', 'svg-lower-back', 4),
+  ('pelvis',     '골반',   3, 'torso', 'center', 'svg-pelvis',     5),
+  ('hip',        '엉덩이', 3, 'torso', 'center', 'svg-hip',        6),
+  ('genitalia',  '생식기', 3, 'torso', 'center', 'svg-genitalia',  7);
+
+-- 왼쪽 다리 (5)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('left_thigh', '허벅지', 3, 'left_leg', 'left', 'svg-l-thigh', 1),
+  ('left_knee',  '무릎',   3, 'left_leg', 'left', 'svg-l-knee',  2),
+  ('left_calf',  '종아리', 3, 'left_leg', 'left', 'svg-l-calf',  3),
+  ('left_ankle', '발목',   3, 'left_leg', 'left', 'svg-l-ankle', 4),
+  ('left_foot',  '발',     3, 'left_leg', 'left', 'svg-l-foot',  5);
+
+-- 오른쪽 다리 (5)
+INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
+  ('right_thigh', '허벅지', 3, 'right_leg', 'right', 'svg-r-thigh', 1),
+  ('right_knee',  '무릎',   3, 'right_leg', 'right', 'svg-r-knee',  2),
+  ('right_calf',  '종아리', 3, 'right_leg', 'right', 'svg-r-calf',  3),
+  ('right_ankle', '발목',   3, 'right_leg', 'right', 'svg-r-ankle', 4),
+  ('right_foot',  '발',     3, 'right_leg', 'right', 'svg-r-foot',  5);
 
 
 -- ============================================================
@@ -210,13 +262,33 @@ CREATE POLICY "body_parts: read only for all"
 --   AND record_date BETWEEN date_trunc('month', NOW()) AND NOW()
 -- ORDER BY record_date;
 
--- 신체 UI 히트맵 (최근 7일 부위별 평균 severity)
--- SELECT sd.body_part_code, AVG(sd.severity) AS avg_severity, COUNT(*) AS freq
+-- L2 그룹별 L3 부위 조회
+-- SELECT code, name_ko, side, svg_path_id
+-- FROM body_parts
+-- WHERE parent_code = 'torso'
+-- ORDER BY display_order;
+
+-- L3 전체 + 소속 L2 그룹명
+-- SELECT
+--   bp3.code, bp3.name_ko, bp3.side, bp3.svg_path_id,
+--   bp2.code AS group_code, bp2.name_ko AS group_name
+-- FROM body_parts bp3
+-- JOIN body_parts bp2 ON bp3.parent_code = bp2.code
+-- WHERE bp3.level = 3
+-- ORDER BY bp2.display_order, bp3.display_order;
+
+-- 홈화면 L2 그룹별 히트맵 (최근 7일 severity 평균)
+-- SELECT
+--   bp2.code AS group_code,
+--   bp2.name_ko,
+--   bp2.svg_path_id,
+--   ROUND(AVG(sd.severity)::numeric, 2) AS avg_severity
 -- FROM symptom_details sd
--- JOIN symptom_records sr ON sd.record_id = sr.id
--- WHERE sr.user_id = auth.uid()
---   AND sr.record_date >= NOW() - INTERVAL '7 days'
--- GROUP BY sd.body_part_code;
+-- JOIN body_parts bp3 ON sd.body_part_code = bp3.code
+-- JOIN body_parts bp2 ON bp3.parent_code = bp2.code
+-- WHERE sd.created_at >= NOW() - INTERVAL '7 days'
+-- GROUP BY bp2.code, bp2.name_ko, bp2.svg_path_id
+-- ORDER BY avg_severity DESC;
 
 -- 연속 기록 streak 계산
 -- SELECT COUNT(*) AS current_streak
