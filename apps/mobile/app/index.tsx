@@ -7,33 +7,32 @@ import {
 import { Text } from "../components/Text";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { SymptomCard } from "../components/SymptomCard";
-import { Symptom } from "@second-body/shared";
+import { RecordCard } from "../components/RecordCard";
+import { SymptomRecord } from "@second-body/shared";
 import { Colors } from "../constants/theme";
+import { useAuth } from "../lib/AuthContext";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000/api";
-
-// 임시 유저 ID (나중에 Supabase Auth로 교체)
-const TEMP_USER_ID = "user-001";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+  const { userId, signOut } = useAuth();
+  const [records, setRecords] = useState<SymptomRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSymptoms();
-  }, []);
+    if (userId) fetchRecords();
+  }, [userId]);
 
-  async function fetchSymptoms() {
+  async function fetchRecords() {
     try {
-      const res = await fetch(`${API_URL}/symptoms`, {
-        headers: { "x-user-id": TEMP_USER_ID },
+      const res = await fetch(`${API_URL}/records`, {
+        headers: { "x-user-id": userId! },
       });
       const data = await res.json();
-      setSymptoms(data as Symptom[]);
+      setRecords(data as SymptomRecord[]);
     } catch (e) {
-      console.error("증상 목록 불러오기 실패:", e);
+      console.error("기록 목록 불러오기 실패:", e);
     } finally {
       setLoading(false);
     }
@@ -48,30 +47,26 @@ export default function HomeScreen() {
   }
 
   return (
-    /**
-     * React Native에는 div, p, span 대신:
-     * - View  → div (레이아웃 컨테이너)
-     * - Text  → p, span (텍스트는 반드시 Text 안에)
-     * - FlatList → 긴 목록 (virtualized, 브라우저의 ul/li와 달리 성능 최적화)
-     * - TouchableOpacity → button (누르면 투명도 효과)
-     */
     <View className="flex-1 bg-surface">
-      {/* 헤더 요약 */}
       <View className="bg-primary px-5 pb-6 pt-4">
-        <Text className="text-surface text-2xl font-bold">내 증상 기록</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-surface text-2xl font-bold">내 증상 기록</Text>
+          <TouchableOpacity onPress={signOut}>
+            <Text className="text-surface/70 text-sm">로그아웃</Text>
+          </TouchableOpacity>
+        </View>
         <Text className="text-on-surface-variant mt-1">
-          총 {symptoms.length}개의 기록
+          총 {records.length}개의 기록
         </Text>
       </View>
 
-      {/* 증상 목록 */}
       <FlatList
-        data={symptoms}
+        data={records}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <SymptomCard
-            symptom={item}
-            onPress={() => router.push(`/symptoms/${item.id}`)}
+          <RecordCard
+            record={item}
+            onPress={() => router.push(`/records/${item.id}`)}
           />
         )}
         contentContainerClassName="p-4 gap-3"
@@ -87,10 +82,9 @@ export default function HomeScreen() {
         }
       />
 
-      {/* 새 증상 기록 버튼 (우측 하단 고정) */}
       <TouchableOpacity
         className="absolute bottom-8 right-6 bg-primary w-14 h-14 rounded-full items-center justify-center shadow-lg"
-        onPress={() => router.push("/symptoms/new")}
+        onPress={() => router.push("/records/new")}
       >
         <Text className="text-surface text-3xl leading-none">+</Text>
       </TouchableOpacity>

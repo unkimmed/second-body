@@ -14,7 +14,7 @@ async function bootstrap() {
   // DTO 유효성 검사 자동 적용
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT ?? 3001;
   await app.listen(port);
   console.log(`API 서버 실행 중: http://localhost:${port}/api`);
 }
