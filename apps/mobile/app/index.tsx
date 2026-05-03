@@ -6,7 +6,8 @@ import {
 } from "react-native";
 import { Text } from "../components/Text";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { RecordCard } from "../components/RecordCard";
 import { SymptomRecord } from "@second-body/shared";
 import { Colors } from "../constants/theme";
@@ -20,9 +21,11 @@ export default function HomeScreen() {
   const [records, setRecords] = useState<SymptomRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (userId) fetchRecords();
-  }, [userId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) fetchRecords();
+    }, [userId])
+  );
 
   async function fetchRecords() {
     try {
