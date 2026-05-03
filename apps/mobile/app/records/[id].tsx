@@ -38,7 +38,7 @@ export default function RecordDetailScreen() {
       .then((data) => setRecord(data as SymptomRecord))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, userId]);
 
   async function confirmDelete() {
     setErrorMessage(null);
