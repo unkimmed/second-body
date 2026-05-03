@@ -8,9 +8,13 @@ import {
 import { Text } from "../../components/Text";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { BodyPartCode, CreateSymptomDetailDto, Severity } from "@second-body/shared";
 import {
-  ALL_BODY_PART_CODES,
+  BODY_PART_CODES,
+  BodyPartCode,
+  CreateSymptomDetailDto,
+  Severity,
+} from "@second-body/shared";
+import {
   BODY_PART_LABELS,
   SEVERITY_LABELS,
   SEVERITY_COLOR,
@@ -34,6 +38,7 @@ export default function NewRecordScreen() {
   const [pendingNote, setPendingNote] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   function addDetail() {
     if (!pendingCode) {
@@ -58,8 +63,14 @@ export default function NewRecordScreen() {
   }
 
   async function handleSubmit() {
+    setErrorMessage(null);
+
     if (details.length === 0) {
-      Alert.alert("입력 오류", "최소 한 개의 신체 부위를 추가해주세요.");
+      setErrorMessage("최소 한 개의 신체 부위를 추가해주세요.");
+      return;
+    }
+    if (!userId) {
+      setErrorMessage("로그인이 필요합니다. 다시 로그인해주세요.");
       return;
     }
 
@@ -69,7 +80,7 @@ export default function NewRecordScreen() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": userId!,
+          "x-user-id": userId,
         },
         body: JSON.stringify({
           record_date: recordDate,
@@ -78,17 +89,16 @@ export default function NewRecordScreen() {
         }),
       });
 
-      if (res.status === 409) {
-        Alert.alert("중복", "해당 날짜에 이미 기록이 존재합니다.");
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        setErrorMessage(`저장 실패 (${res.status}): ${text || "원인 불명"}`);
         return;
       }
-      if (!res.ok) throw new Error("저장 실패");
 
-      Alert.alert("저장 완료", "증상이 기록되었습니다.", [
-        { text: "확인", onPress: () => router.back() },
-      ]);
-    } catch {
-      Alert.alert("오류", "저장 중 문제가 발생했습니다.");
+      router.back();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setErrorMessage(`네트워크 오류: ${msg}`);
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +177,7 @@ export default function NewRecordScreen() {
         <View>
           <Text className="text-xs text-on-surface-variant mb-2">신체 부위</Text>
           <View className="flex-row flex-wrap gap-2">
-            {ALL_BODY_PART_CODES.map((code) => {
+            {BODY_PART_CODES.map((code) => {
               const alreadyAdded = details.some((d) => d.body_part_code === code);
               const isSelected = pendingCode === code;
               return (
@@ -247,6 +257,13 @@ export default function NewRecordScreen() {
           <Text className="text-surface text-sm font-semibold">+ 부위 추가</Text>
         </TouchableOpacity>
       </View>
+
+      {/* 에러 메시지 */}
+      {errorMessage && (
+        <View className="bg-red-50 border border-red-200 rounded-xl p-3">
+          <Text className="text-danger text-sm">{errorMessage}</Text>
+        </View>
+      )}
 
       {/* 저장 버튼 */}
       <TouchableOpacity

@@ -135,8 +135,8 @@ CREATE TABLE public.avatars (
 
 
 -- ============================================================
--- 4. SYMPTOM_RECORDS (일별 기록 헤더)
--- 하루 1개만 생성 가능. 달력뷰·기록 여부 체크의 기준 테이블.
+-- 4. SYMPTOM_RECORDS (기록 헤더)
+-- 한 사용자가 같은 날짜에 여러 기록을 남길 수 있음.
 -- ============================================================
 
 CREATE TABLE public.symptom_records (
@@ -145,10 +145,7 @@ CREATE TABLE public.symptom_records (
   record_date  DATE        NOT NULL,
   overall_note TEXT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-  -- 하루 1개 기록 보장
-  UNIQUE (user_id, record_date)
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 달력뷰 + 오늘 기록 여부 조회 최적화

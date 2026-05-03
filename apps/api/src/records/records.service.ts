@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SymptomRecord } from '@second-body/shared';
 import { CreateRecordDto } from './dto/create-record.dto';
@@ -19,17 +19,17 @@ export class RecordsService {
     return data as SymptomRecord[];
   }
 
-  async findToday(userId: string): Promise<SymptomRecord | null> {
+  async findToday(userId: string): Promise<SymptomRecord[]> {
     const today = new Date().toISOString().slice(0, 10);
     const { data, error } = await this.supabase.client
       .from('symptom_records')
       .select('*, details:symptom_details(*)')
       .eq('user_id', userId)
       .eq('record_date', today)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
 
     if (error) throw new Error(error.message);
-    return data as SymptomRecord | null;
+    return (data ?? []) as SymptomRecord[];
   }
 
   async findOne(id: string, userId: string): Promise<SymptomRecord> {
@@ -54,9 +54,6 @@ export class RecordsService {
       .single();
 
     if (recordError) {
-      if (recordError.code === '23505') {
-        throw new ConflictException('해당 날짜에 이미 기록이 존재합니다.');
-      }
       throw new Error(recordError.message);
     }
 
