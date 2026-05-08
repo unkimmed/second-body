@@ -4,18 +4,18 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Text } from "../components/Text";
+import { Text } from "../../components/Text";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { RecordCard } from "../components/RecordCard";
+import { RecordCard } from "../../components/RecordCard";
 import { SymptomRecord } from "@second-body/shared";
-import { Colors } from "../constants/theme";
-import { useAuth } from "../lib/AuthContext";
+import { Colors } from "../../constants/theme";
+import { useAuth } from "../../lib/AuthContext";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
-export default function HomeScreen() {
+export default function RecordsScreen() {
   const router = useRouter();
   const { userId, signOut } = useAuth();
   const [records, setRecords] = useState<SymptomRecord[]>([]);

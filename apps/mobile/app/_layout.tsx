@@ -37,7 +37,7 @@ function RootNavigator() {
         },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Second Body" }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="records/new" options={{ title: "증상 기록하기" }} />
       <Stack.Screen name="records/[id]" options={{ title: "기록 상세" }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />

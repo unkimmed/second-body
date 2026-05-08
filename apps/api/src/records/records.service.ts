@@ -11,7 +11,7 @@ export class RecordsService {
   async findAll(userId: string): Promise<SymptomRecord[]> {
     const { data, error } = await this.supabase.client
       .from('symptom_records')
-      .select('*')
+      .select('*, details:symptom_details(*)')
       .eq('user_id', userId)
       .order('record_date', { ascending: false });
 
