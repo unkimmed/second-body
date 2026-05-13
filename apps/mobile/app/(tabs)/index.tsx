@@ -1,21 +1,13 @@
-import { useCallback, useState } from "react";
-import {
-  View,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Pressable,
-} from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { Text } from "../../components/Text";
 import { BodyMap, BodyMapView } from "../../components/BodyMap";
+import { L3Panel } from "../../components/L3Panel";
+import { InlineRecordSheet } from "../../components/InlineRecordSheet";
 import { BodyPartCode, Severity, SymptomRecord } from "@second-body/shared";
-import { BODY_PART_LABELS, SEVERITY_LABELS } from "../../constants/symptom";
-import {
-  Level2Group,
-  LEVEL2_GROUPS,
-  ZoomState,
-} from "../../constants/bodyMapZoom";
 import { Colors } from "../../constants/theme";
 import { useAuth } from "../../lib/AuthContext";
 
@@ -38,157 +30,124 @@ function buildSeverityMap(
 
 export default function HomeScreen() {
   const { userId } = useAuth();
+  const insets = useSafeAreaInsets();
   const [view, setView] = useState<BodyMapView>("front");
-  const [zoom, setZoom] = useState<ZoomState>({ level: "L1" });
-  const [selected, setSelected] = useState<BodyPartCode | null>(null);
-  const [severityMap, setSeverityMap] = useState<
-    Partial<Record<BodyPartCode, Severity>>
-  >({});
+  const [l3Active, setL3Active] = useState<BodyPartCode | null>(null);
+  const [records, setRecords] = useState<SymptomRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isZoomed, setIsZoomed] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (userId) fetchAllRecords();
-    }, [userId])
-  );
+  const inlineSheetRef = useRef<BottomSheetModal>(null);
 
-  async function fetchAllRecords() {
-    setLoading(true);
+  const fetchAllRecords = useCallback(async () => {
+    if (!userId) return;
     try {
       const res = await fetch(`${API_URL}/records`, {
-        headers: { "x-user-id": userId! },
+        headers: { "x-user-id": userId },
       });
       const data = (await res.json()) as SymptomRecord[];
-      const map = buildSeverityMap(data);
-      setSeverityMap(map);
+      setRecords(data);
     } catch (e) {
-      console.error("[BodyMap] 기록 불러오기 실패:", e);
-      setSeverityMap({});
+      // dev에서 API 서버가 꺼져 있거나 폰에서 localhost를 못 잡으면 여기로 옴.
+      // 빈 기록은 정상 상태이므로 조용히 처리.
+      console.warn("[BodyMap] 기록 불러오기 실패:", e);
+      setRecords([]);
     } finally {
       setLoading(false);
     }
-  }
+  }, [userId]);
 
-  const selectedSeverity = selected ? severityMap[selected] : undefined;
-  const hasAnyRecord = Object.keys(severityMap).length > 0;
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        setLoading(true);
+        fetchAllRecords();
+      }
+    }, [userId, fetchAllRecords])
+  );
 
-  const handleGroupPress = (group: Level2Group) => {
-    setZoom({ level: "L2", group });
+  const severityMap = useMemo(() => buildSeverityMap(records), [records]);
+  const hasAnyRecord = records.length > 0;
+
+  const handleViewChange = (newView: BodyMapView) => {
+    setL3Active(null);
+    setView(newView);
   };
 
-  const handleBackgroundPress = () => {
-    if (selected) {
-      setSelected(null);
-    } else {
-      setZoom({ level: "L1" });
-    }
+  const handleRequestAdd = () => {
+    inlineSheetRef.current?.present();
   };
 
-  const handleBackToL1 = () => {
-    setZoom({ level: "L1" });
-    setSelected(null);
+  const handleSaved = () => {
+    inlineSheetRef.current?.dismiss();
+    fetchAllRecords();
   };
-
-  const currentGroupLabel =
-    zoom.level === "L2" ? LEVEL2_GROUPS[zoom.group].nameKo : null;
 
   return (
-    <ScrollView className="flex-1 bg-surface" contentContainerClassName="pb-10">
-      <View className="bg-primary px-5 pb-6 pt-4">
-        <Text className="text-surface text-2xl font-bold">내 몸 상태</Text>
-        <Text className="text-on-surface-variant mt-1">
-          기록된 모든 증상이 표시돼요
-        </Text>
-      </View>
-
-      <View className="flex-row justify-center gap-2 mt-4">
-        <ToggleButton
-          active={view === "front"}
-          label="앞면"
-          onPress={() => setView("front")}
-        />
-        <ToggleButton
-          active={view === "back"}
-          label="뒷면"
-          onPress={() => setView("back")}
-        />
-      </View>
-
-      {/* L2 진입 시 상단 헤더 */}
-      <View className="px-5 mt-3 h-6 justify-center">
-        {zoom.level === "L2" && (
-          <Pressable onPress={handleBackToL1} hitSlop={8}>
-            <Text style={{ color: Colors.onSurfaceVariant, fontSize: 14 }}>
-              ← 전신 · {currentGroupLabel}
-            </Text>
-          </Pressable>
-        )}
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top }}>
+      <View
+        style={{ opacity: isZoomed ? 0 : 1 }}
+        pointerEvents={isZoomed ? "none" : "auto"}
+      >
+        <View className="items-center pt-2 pb-1">
+          <Text className="text-on-surface text-lg font-bold">바디맵</Text>
+        </View>
+        <View className="flex-row justify-center gap-2 mt-2">
+          <ToggleButton
+            active={view === "front"}
+            label="앞면"
+            onPress={() => handleViewChange("front")}
+          />
+          <ToggleButton
+            active={view === "back"}
+            label="뒷면"
+            onPress={() => handleViewChange("back")}
+          />
+        </View>
       </View>
 
       {loading ? (
-        <View className="items-center justify-center py-20">
+        <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       ) : (
-        <>
-          <View className="items-center mt-2">
-            <BodyMap
-              view={view}
-              zoom={zoom}
-              severityMap={severityMap}
-              selected={selected}
-              onGroupPress={handleGroupPress}
-              onPartPress={(code) => setSelected(code)}
-              onBackgroundPress={handleBackgroundPress}
-            />
-          </View>
-
-          {!hasAnyRecord && zoom.level === "L1" && (
-            <View className="items-center mt-2">
-              <Text className="text-on-surface-variant">
-                기록된 증상이 없어요
-              </Text>
-            </View>
-          )}
-
-          {zoom.level === "L1" && hasAnyRecord && (
-            <View className="items-center mt-2">
-              <Text className="text-on-surface-variant text-sm">
-                부위 그룹을 탭하면 자세히 볼 수 있어요
-              </Text>
-            </View>
-          )}
-
-          {selected && (
-            <View
-              className="mx-5 mt-4 p-4 rounded-2xl"
-              style={{
-                backgroundColor: Colors.surfaceContainerLowest,
-                shadowColor: Colors.onSurface,
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.06,
-                shadowRadius: 20,
-                elevation: 2,
-              }}
-            >
-              <View className="flex-row items-center justify-between">
-                <Text className="text-lg font-bold text-on-surface">
-                  {BODY_PART_LABELS[selected]}
-                </Text>
-                <TouchableOpacity onPress={() => setSelected(null)} hitSlop={8}>
-                  <Text className="text-on-surface-variant">닫기</Text>
-                </TouchableOpacity>
-              </View>
-              <Text className="text-on-surface-variant mt-2">
-                {selectedSeverity
-                  ? `심각도: ${selectedSeverity} (${SEVERITY_LABELS[selectedSeverity]})`
-                  : "이 부위는 기록된 증상이 없어요"}
-              </Text>
-            </View>
-          )}
-        </>
+        <BodyMap
+          view={view}
+          severityMap={severityMap}
+          selected={l3Active}
+          onPartTap={(code) => setL3Active(code)}
+          l3Active={l3Active}
+          onZoomChange={setIsZoomed}
+        />
       )}
-    </ScrollView>
+
+      {!loading && (
+        <View className="absolute left-0 right-0 items-center px-5"
+          style={{ bottom: 8 }} pointerEvents="none">
+          <Text className="text-on-surface-variant text-xs text-center">
+            두 손가락으로 확대해서 부위를 탭하세요
+          </Text>
+          {!hasAnyRecord && (
+            <Text className="text-on-surface-variant mt-1">
+              기록된 증상이 없어요
+            </Text>
+          )}
+        </View>
+      )}
+
+      <L3Panel
+        activePart={l3Active}
+        records={records}
+        onClose={() => setL3Active(null)}
+        onRequestAdd={handleRequestAdd}
+      />
+
+      <InlineRecordSheet
+        ref={inlineSheetRef}
+        bodyPart={l3Active}
+        onSaved={handleSaved}
+      />
+    </View>
   );
 }
 
@@ -208,13 +167,18 @@ function ToggleButton({
         paddingHorizontal: 24,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: active ? Colors.primary : "#e5e7eb",
+        backgroundColor: active ? "#ffffff" : "#f3f4f6",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: active ? 0.1 : 0,
+        shadowRadius: 2,
+        elevation: active ? 2 : 0,
       }}
     >
       <Text
         style={{
-          color: active ? Colors.surface : Colors.onSurface,
-          fontWeight: "600",
+          color: active ? Colors.onSurface : Colors.onSurfaceVariant,
+          fontWeight: active ? "700" : "500",
         }}
       >
         {label}

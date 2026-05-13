@@ -24,6 +24,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "바디맵",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Text style={{ color, fontSize: size }}>🏠</Text>
           ),
