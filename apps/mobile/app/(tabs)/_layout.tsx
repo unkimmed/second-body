@@ -25,18 +25,18 @@ export default function TabsLayout() {
         options={{
           title: "바디맵",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>🏠</Text>
-          ),
+          // tabBarIcon: ({ color, size }) => (
+          //   <Text style={{ color, fontSize: size }}>🏠</Text>
+          // ),
         }}
       />
       <Tabs.Screen
         name="records"
         options={{
           title: "기록",
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>📋</Text>
-          ),
+          // tabBarIcon: ({ color, size }) => (
+          //   <Text style={{ color, fontSize: size }}>📋</Text>
+          // ),
         }}
       />
     </Tabs>

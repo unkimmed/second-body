@@ -146,8 +146,23 @@ export function BodyMap({
     container.height,
   ]);
 
-  /** Pinch 종료 시각 — 잔여 손가락이 pan으로 즉시 인식되는 점프 방지용. */
+  /** Pinch 종료 시각 — pan.onEnd의 노이즈 velocity decay 방지용. */
   const lastPinchEndAt = useSharedValue(0);
+  /** Pinch가 현재 진행 중인지. pan→pinch 전환 시 pan.onEnd 노이즈 차단용. */
+  const isPinchActive = useSharedValue(false);
+
+  /** pan 중 첫 손가락의 마지막 화면 좌표 — pan→pinch 전환 시 anchor로 사용. */
+  const panLastScreenX = useSharedValue(0);
+  const panLastScreenY = useSharedValue(0);
+  /** pan이 마지막으로 active했던 시각. pinch 시작 시 직전 pan 여부 판단용. */
+  const panLastActiveAt = useSharedValue(0);
+
+  /** Pinch 시작 시점의 anchor 화면 좌표 (centroid 또는 첫 손가락 위치). */
+  const savedAnchorScreenX = useSharedValue(0);
+  const savedAnchorScreenY = useSharedValue(0);
+  /** Pinch 시작 시점의 centroid 화면 좌표 — 이후 centroid 이동량 계산용. */
+  const savedCentroidScreenX = useSharedValue(0);
+  const savedCentroidScreenY = useSharedValue(0);
 
   // 임계값 도달 순간 햅틱 1회
   useAnimatedReaction(
@@ -255,12 +270,27 @@ export function BodyMap({
       cancelAnimation(scale);
       cancelAnimation(translateX);
       cancelAnimation(translateY);
+      isPinchActive.value = true;
       savedScale.value = scale.value;
-      focalX.value = (e.focalX - translateX.value) / scale.value;
-      focalY.value = (e.focalY - translateY.value) / scale.value;
+
+      // 직전 pan에서 이어진 경우 첫 손가락 위치를 anchor로 사용 (그 지점을 기준으로 줌).
+      // 그 외엔 표준 핀치처럼 centroid를 anchor로 사용.
+      const fromPan = Date.now() - panLastActiveAt.value < 100;
+      const anchorX = fromPan ? panLastScreenX.value : e.focalX;
+      const anchorY = fromPan ? panLastScreenY.value : e.focalY;
+
+      savedAnchorScreenX.value = anchorX;
+      savedAnchorScreenY.value = anchorY;
+      savedCentroidScreenX.value = e.focalX;
+      savedCentroidScreenY.value = e.focalY;
+      focalX.value = (anchorX - translateX.value) / scale.value;
+      focalY.value = (anchorY - translateY.value) / scale.value;
     })
     .onUpdate((e) => {
       if (isL3Locked.value) return;
+      // 손가락이 2 → 1로 떨어진 순간 onEnd 직전 마지막 onUpdate가 한 번 더 발사되는데,
+      // focal이 두 손가락 중점에서 남은 한 손가락 위치로 점프하면서 화면이 튐. 무시.
+      if (e.numberOfPointers < 2) return;
       const rawScale = savedScale.value * e.scale;
       // 한계 초과 시 hard clamp 대신 rubber band 적용 (점진적 둔감화)
       const newScale = rubberBandClamp(
@@ -270,9 +300,15 @@ export function BodyMap({
         RUBBER_BAND_SCALE_RANGE,
         RUBBER_BAND_COEF
       );
-      // focal 추종 raw translate
-      const rawTX = e.focalX - focalX.value * newScale;
-      const rawTY = e.focalY - focalY.value * newScale;
+      // anchor 추종: anchor 화면 좌표 = 시작 시점 anchor + (centroid 이동량).
+      // 두 손가락이 같이 움직이면 anchor도 따라가고, 한쪽만 벌어지면 anchor가 거의 고정 →
+      // 결과적으로 처음 손가락 위치를 기준으로 줌인/줌아웃.
+      const effectiveAnchorX =
+        savedAnchorScreenX.value + (e.focalX - savedCentroidScreenX.value);
+      const effectiveAnchorY =
+        savedAnchorScreenY.value + (e.focalY - savedCentroidScreenY.value);
+      const rawTX = effectiveAnchorX - focalX.value * newScale;
+      const rawTY = effectiveAnchorY - focalY.value * newScale;
       // bounds 초과분에 rubber band 적용 (콘텐츠가 bounds 한참 밖으로 못 흘러가게)
       const minTX = containerWidthSV.value * (1 - newScale);
       const minTY = containerHeightSV.value * (1 - newScale);
@@ -294,6 +330,7 @@ export function BodyMap({
     })
     .onEnd(() => {
       lastPinchEndAt.value = Date.now();
+      isPinchActive.value = false;
       if (isL3Locked.value) return;
       const currentScale = scale.value;
 
@@ -339,27 +376,22 @@ export function BodyMap({
   // Pan — 한 손가락 드래그. iOS와 동일하게 bounds rubber band + 관성 + bounce-back
   const pan = Gesture.Pan()
     .maxPointers(1)
-    .onStart(() => {
-      // 핀치 종료 직후 잔여 손가락의 onStart는 pinch.onEnd의 spring back을
-      // cancelAnimation으로 죽이지 않도록 무시
-      if (Date.now() - lastPinchEndAt.value < PINCH_TO_PAN_COOLDOWN_MS) {
-        return;
-      }
-      // 진행 중인 decay/spring 중단
+    .onStart((e) => {
+      // 핀치의 spring back을 즉시 잡아채 pan으로 자연스럽게 연결 (iOS 동작)
       cancelAnimation(translateX);
       cancelAnimation(translateY);
       savedTranslateX.value = translateX.value;
       savedTranslateY.value = translateY.value;
+      panLastScreenX.value = e.x;
+      panLastScreenY.value = e.y;
+      panLastActiveAt.value = Date.now();
     })
     .onUpdate((e) => {
       if (isL3Locked.value) return;
       if (scale.value <= MIN_SCALE) return;
-      // 핀치 종료 직후 잔여 손가락 점프 방지
-      if (Date.now() - lastPinchEndAt.value < PINCH_TO_PAN_COOLDOWN_MS) {
-        savedTranslateX.value = translateX.value - e.translationX;
-        savedTranslateY.value = translateY.value - e.translationY;
-        return;
-      }
+      panLastScreenX.value = e.x;
+      panLastScreenY.value = e.y;
+      panLastActiveAt.value = Date.now();
       const rawTX = savedTranslateX.value + e.translationX;
       const rawTY = savedTranslateY.value + e.translationY;
       const minTX = containerWidthSV.value * (1 - scale.value);
@@ -383,9 +415,26 @@ export function BodyMap({
     .onEnd((e) => {
       if (isL3Locked.value) return;
       if (scale.value <= MIN_SCALE) return;
-      // 핀치 종료 직후 잔여 손가락의 onEnd는 노이즈. velocity decay 발동 안 함.
-      // (시나리오 1·2: pinch→pan 전환 시 noise velocity로 화면이 튀는 것 방지)
+      // pan→pinch 전환: 두번째 손가락이 닿으면서 pan이 종료되는 케이스. 노이즈 velocity로
+      // decay 발사하지 않도록 즉시 return (pinch가 기준점 그대로 이어받음).
+      if (isPinchActive.value) return;
+      // 핀치 종료 직후 잔여 손가락의 onEnd는 노이즈 velocity로 decay가 튈 수 있음 — 가드
       if (Date.now() - lastPinchEndAt.value < PINCH_TO_PAN_COOLDOWN_MS) {
+        // 위치는 그대로 두고 bounds 밖이면 spring back만
+        const minTX = containerWidthSV.value * (1 - scale.value);
+        const minTY = containerHeightSV.value * (1 - scale.value);
+        if (translateX.value < minTX || translateX.value > 0) {
+          translateX.value = withSpring(
+            Math.max(minTX, Math.min(translateX.value, 0)),
+            SPRING_CONFIG
+          );
+        }
+        if (translateY.value < minTY || translateY.value > 0) {
+          translateY.value = withSpring(
+            Math.max(minTY, Math.min(translateY.value, 0)),
+            SPRING_CONFIG
+          );
+        }
         return;
       }
       const minTX = containerWidthSV.value * (1 - scale.value);
