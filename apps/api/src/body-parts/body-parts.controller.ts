@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { BodyPartsService } from './body-parts.service';
+import { Controller, Get } from '@nestjs/common'
+import { BodyPartsService } from './body-parts.service'
 
 @Controller('body-parts')
 export class BodyPartsController {
@@ -8,6 +8,6 @@ export class BodyPartsController {
   // GET /api/body-parts
   @Get()
   findAll() {
-    return this.bodyPartsService.findAll();
+    return this.bodyPartsService.findAll()
   }
 }

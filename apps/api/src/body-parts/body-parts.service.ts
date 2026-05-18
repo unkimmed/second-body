@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
-import { BodyPart } from '@second-body/shared';
+import { Injectable } from '@nestjs/common'
+import { SupabaseService } from '../supabase/supabase.service'
+import { BodyPart } from '@second-body/shared'
 
 @Injectable()
 export class BodyPartsService {
@@ -11,9 +11,9 @@ export class BodyPartsService {
       .from('body_parts')
       .select('*')
       .order('level')
-      .order('display_order');
+      .order('display_order')
 
-    if (error) throw new Error(error.message);
-    return data as BodyPart[];
+    if (error) throw new Error(error.message)
+    return data as BodyPart[]
   }
 }

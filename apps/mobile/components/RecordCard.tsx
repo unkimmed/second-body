@@ -1,17 +1,17 @@
-import { View, TouchableOpacity } from "react-native";
-import { Text } from "./Text";
-import { SymptomRecord, Severity } from "@second-body/shared";
-import { BODY_PART_LABELS, SEVERITY_COLOR } from "../constants/symptom";
+import { View, TouchableOpacity } from 'react-native'
+import { Text } from './Text'
+import { SymptomRecord, Severity } from '@second-body/shared'
+import { BODY_PART_LABELS, SEVERITY_COLOR } from '../constants/symptom'
 
 interface Props {
-  record: SymptomRecord;
-  onPress: () => void;
+  record: SymptomRecord
+  onPress: () => void
 }
 
 export function RecordCard({ record, onPress }: Props) {
   const maxSeverity = record.details?.length
     ? (Math.max(...record.details.map((d) => d.severity)) as Severity)
-    : undefined;
+    : undefined
 
   return (
     <TouchableOpacity
@@ -21,13 +21,11 @@ export function RecordCard({ record, onPress }: Props) {
     >
       <View className="flex-row">
         <View
-          className={`w-1.5 ${maxSeverity ? SEVERITY_COLOR[maxSeverity] : "bg-surface-high"}`}
+          className={`w-1.5 ${maxSeverity ? SEVERITY_COLOR[maxSeverity] : 'bg-surface-high'}`}
         />
         <View className="flex-1 p-4">
           <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-on-surface">
-              {record.record_date}
-            </Text>
+            <Text className="text-base font-semibold text-on-surface">{record.record_date}</Text>
             {record.details && record.details.length > 0 && (
               <Text className="text-xs text-on-surface-variant">
                 {record.details.length}개 부위
@@ -53,15 +51,12 @@ export function RecordCard({ record, onPress }: Props) {
           )}
 
           {record.overall_note ? (
-            <Text
-              className="text-sm text-on-surface-variant mt-2"
-              numberOfLines={1}
-            >
+            <Text className="text-sm text-on-surface-variant mt-2" numberOfLines={1}>
               {record.overall_note}
             </Text>
           ) : null}
         </View>
       </View>
     </TouchableOpacity>
-  );
+  )
 }

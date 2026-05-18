@@ -9,9 +9,12 @@
     "mobile:web": "pnpm --filter mobile web",
     "api": "pnpm --filter api start:dev",
     "api:build": "pnpm --filter api build",
-    "shared:build": "pnpm --filter @second-body/shared build"
+    "shared:build": "pnpm --filter @second-body/shared build",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,js,jsx,json}\" \"packages/**/*.{ts,tsx,js,jsx,json}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,jsx,json}\" \"packages/**/*.{ts,tsx,js,jsx,json}\""
   },
   "devDependencies": {
+    "prettier": "^3.8.3",
     "typescript": "^5.3.0"
   },
   "pnpm": {

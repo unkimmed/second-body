@@ -1,43 +1,37 @@
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-} from "react-native";
-import { Text } from "../components/Text";
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { useAuth } from "../lib/AuthContext";
-import { AvatarGender } from "@second-body/shared";
+import { View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native'
+import { Text } from '../components/Text'
+import { useRouter } from 'expo-router'
+import { useState } from 'react'
+import { useAuth } from '../lib/AuthContext'
+import { AvatarGender } from '@second-body/shared'
 
 const GENDER_OPTIONS: { value: AvatarGender; label: string }[] = [
-  { value: "male", label: "남성" },
-  { value: "female", label: "여성" },
-];
+  { value: 'male', label: '남성' },
+  { value: 'female', label: '여성' },
+]
 
 export default function SignUpScreen() {
-  const router = useRouter();
-  const { signUp } = useAuth();
+  const router = useRouter()
+  const { signUp } = useAuth()
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [avatarName, setAvatarName] = useState("");
-  const [gender, setGender] = useState<AvatarGender>("male");
-  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [avatarName, setAvatarName] = useState('')
+  const [gender, setGender] = useState<AvatarGender>('male')
+  const [loading, setLoading] = useState(false)
 
   async function handleSignUp() {
     if (!name || !email || !password || !avatarName) {
-      Alert.alert("입력 오류", "모든 항목을 입력해주세요.");
-      return;
+      Alert.alert('입력 오류', '모든 항목을 입력해주세요.')
+      return
     }
     if (password.length < 6) {
-      Alert.alert("입력 오류", "비밀번호는 6자 이상이어야 합니다.");
-      return;
+      Alert.alert('입력 오류', '비밀번호는 6자 이상이어야 합니다.')
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
       const { needsEmailConfirm } = await signUp({
         name,
@@ -45,20 +39,20 @@ export default function SignUpScreen() {
         password,
         avatarName,
         gender,
-      });
+      })
 
       if (needsEmailConfirm) {
         Alert.alert(
-          "이메일 인증 필요",
-          "가입 확인 이메일을 발송했습니다. 이메일을 확인한 후 로그인해주세요.",
-          [{ text: "확인", onPress: () => router.replace("/login") }]
-        );
+          '이메일 인증 필요',
+          '가입 확인 이메일을 발송했습니다. 이메일을 확인한 후 로그인해주세요.',
+          [{ text: '확인', onPress: () => router.replace('/login') }],
+        )
       }
       // 인증 불필요 시 onAuthStateChange → _layout.tsx 에서 자동으로 홈으로 이동
     } catch (e: any) {
-      Alert.alert("가입 실패", e.message ?? "회원가입 중 오류가 발생했습니다.");
+      Alert.alert('가입 실패', e.message ?? '회원가입 중 오류가 발생했습니다.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -104,9 +98,7 @@ export default function SignUpScreen() {
 
       {/* 비밀번호 */}
       <View className="gap-1.5">
-        <Text className="text-sm font-medium text-on-surface-variant">
-          비밀번호 (6자 이상)
-        </Text>
+        <Text className="text-sm font-medium text-on-surface-variant">비밀번호 (6자 이상)</Text>
         <TextInput
           className="border border-outline-variant rounded-xl px-4 py-3 text-base bg-surface-low"
           value={password}
@@ -144,13 +136,13 @@ export default function SignUpScreen() {
               onPress={() => setGender(value)}
               className={`flex-1 py-3 rounded-xl items-center border ${
                 gender === value
-                  ? "bg-primary border-primary"
-                  : "bg-surface-low border-outline-variant"
+                  ? 'bg-primary border-primary'
+                  : 'bg-surface-low border-outline-variant'
               }`}
             >
               <Text
                 className={`text-sm font-medium ${
-                  gender === value ? "text-surface" : "text-on-surface-variant"
+                  gender === value ? 'text-surface' : 'text-on-surface-variant'
                 }`}
               >
                 {label}
@@ -164,23 +156,19 @@ export default function SignUpScreen() {
       <TouchableOpacity
         onPress={handleSignUp}
         disabled={loading}
-        className={`py-4 rounded-2xl items-center mt-2 ${loading ? "opacity-50 bg-primary" : "bg-primary"}`}
+        className={`py-4 rounded-2xl items-center mt-2 ${loading ? 'opacity-50 bg-primary' : 'bg-primary'}`}
       >
         <Text className="text-surface text-base font-bold">
-          {loading ? "처리 중..." : "가입하기"}
+          {loading ? '처리 중...' : '가입하기'}
         </Text>
       </TouchableOpacity>
 
       {/* 로그인 링크 */}
-      <TouchableOpacity
-        className="items-center"
-        onPress={() => router.replace("/login")}
-      >
+      <TouchableOpacity className="items-center" onPress={() => router.replace('/login')}>
         <Text className="text-on-surface-variant text-sm">
-          이미 계정이 있으신가요?{" "}
-          <Text className="text-primary font-semibold">로그인</Text>
+          이미 계정이 있으신가요? <Text className="text-primary font-semibold">로그인</Text>
         </Text>
       </TouchableOpacity>
     </ScrollView>
-  );
+  )
 }

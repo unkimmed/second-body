@@ -2,20 +2,14 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ESNext",
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "jsx": "react-native",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@second-body/shared": [
-        "../../packages/shared/src/index.ts"
-      ]
+      "@/*": ["./*"],
+      "@second-body/shared": ["../../packages/shared/src/index.ts"]
     }
   },
   "include": [
