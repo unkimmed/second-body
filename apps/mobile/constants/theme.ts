@@ -9,41 +9,41 @@
 
 export const Colors = {
   // Surface hierarchy (stacked vellum layers)
-  surface: "#fbf9f5", // Base — the foundation of the sanctuary
-  surfaceContainerLow: "#f5f4ef", // Secondary content sections
-  surfaceContainerLowest: "#ffffff", // Interactive cards — pops against cream base
-  surfaceContainer: "#f0efe9", // Mid-level container
-  surfaceContainerHigh: "#e9e8e3", // Nested elements (search bars, toggle backgrounds)
+  surface: '#fbf9f5', // Base — the foundation of the sanctuary
+  surfaceContainerLow: '#f5f4ef', // Secondary content sections
+  surfaceContainerLowest: '#ffffff', // Interactive cards — pops against cream base
+  surfaceContainer: '#f0efe9', // Mid-level container
+  surfaceContainerHigh: '#e9e8e3', // Nested elements (search bars, toggle backgrounds)
 
   // Primary accent
-  primary: "#456373", // Muted blue for focus and action
-  primaryDim: "#395767", // Gradient endpoint — deep, slightly darker
+  primary: '#456373', // Muted blue for focus and action
+  primaryDim: '#395767', // Gradient endpoint — deep, slightly darker
 
   // On-surface (text/icon)
-  onSurface: "#31332f", // Default text — never 100% black
-  onSurfaceVariant: "#5e605b", // Soft secondary text (section headlines)
+  onSurface: '#31332f', // Default text — never 100% black
+  onSurfaceVariant: '#5e605b', // Soft secondary text (section headlines)
 
   // Outline
-  outlineVariant: "#b2b2ac", // At 15% opacity for ghost borders only
+  outlineVariant: '#b2b2ac', // At 15% opacity for ghost borders only
 
   // Semantic aliases
   text: {
-    primary: "#31332f",
-    secondary: "#5e605b",
-    muted: "rgba(93, 96, 91, 0.6)",
-    inverse: "#fbf9f5",
-    accent: "#456373",
+    primary: '#31332f',
+    secondary: '#5e605b',
+    muted: 'rgba(93, 96, 91, 0.6)',
+    inverse: '#fbf9f5',
+    accent: '#456373',
   },
 
   // Glass overlay (surface at 80% opacity)
-  glass: "rgba(251, 249, 245, 0.80)",
+  glass: 'rgba(251, 249, 245, 0.80)',
 
   // Shadow tone (on-surface @ 6% opacity)
-  shadowTone: "rgba(49, 51, 47, 0.06)",
+  shadowTone: 'rgba(49, 51, 47, 0.06)',
 
   // Ghost border (outline-variant @ 15% opacity)
-  ghostBorder: "rgba(178, 178, 172, 0.15)",
-} as const;
+  ghostBorder: 'rgba(178, 178, 172, 0.15)',
+} as const
 
 // ---------------------------------------------------------------------------
 // Typography
@@ -51,15 +51,15 @@ export const Colors = {
 
 // Pretendard Variable — loaded via CDN in global.css (web only)
 export const FontFamily = {
-  base: "Pretendard Variable",
-} as const;
+  base: 'Pretendard Variable',
+} as const
 
 export const FontWeight = {
-  regular: "400" as const,
-  medium: "500" as const,
-  semiBold: "600" as const,
-  bold: "700" as const,
-} as const;
+  regular: '400' as const,
+  medium: '500' as const,
+  semiBold: '600' as const,
+  bold: '700' as const,
+} as const
 
 /** Font size scale (rem → px, base 16px) — Pretendard */
 export const FontSize = {
@@ -75,7 +75,7 @@ export const FontSize = {
   bodySm: 12, // 0.75rem
   labelMd: 11, // 0.6875rem — uppercase metadata
   labelSm: 10, // 0.625rem — timestamps
-} as const;
+} as const
 
 export const LineHeight = {
   displayLg: 56,
@@ -90,7 +90,7 @@ export const LineHeight = {
   bodySm: 18,
   labelMd: 16,
   labelSm: 14,
-} as const;
+} as const
 
 export const LetterSpacing = {
   display: -0.96, // -0.02em at ~48px — tight, premium feel
@@ -98,7 +98,7 @@ export const LetterSpacing = {
   normal: 0,
   wide: 0.5, // For uppercase labels
   wider: 1.0,
-} as const;
+} as const
 
 /** Pre-composed text style objects — use these directly on <Text> */
 export const TextStyle = {
@@ -189,7 +189,7 @@ export const TextStyle = {
     lineHeight: LineHeight.labelMd,
     letterSpacing: LetterSpacing.wider,
     color: Colors.onSurfaceVariant,
-    textTransform: "uppercase" as const,
+    textTransform: 'uppercase' as const,
   },
   labelSm: {
     fontFamily: FontFamily.base,
@@ -199,7 +199,7 @@ export const TextStyle = {
     letterSpacing: LetterSpacing.wide,
     color: Colors.onSurfaceVariant,
   },
-} as const;
+} as const
 
 // ---------------------------------------------------------------------------
 // Spacing
@@ -212,12 +212,12 @@ export const Spacing = {
   base: 16,
   lg: 20,
   xl: 24,
-  "2xl": 32,
-  "3xl": 40,
-  "4xl": 48,
-  "5xl": 64,
-  "6xl": 80,
-} as const;
+  '2xl': 32,
+  '3xl': 40,
+  '4xl': 48,
+  '5xl': 64,
+  '6xl': 80,
+} as const
 
 // ---------------------------------------------------------------------------
 // Border Radius (Roundness Scale)
@@ -233,7 +233,7 @@ export const Radius = {
   xl: 48,
   // full: pill shape — buttons, chips, checkboxes, radios
   full: 9999,
-} as const;
+} as const
 
 // ---------------------------------------------------------------------------
 // Elevation / Shadow
@@ -251,13 +251,13 @@ export const Shadow = {
   },
   // None — explicit "no shadow" reset
   none: {
-    shadowColor: "transparent",
+    shadowColor: 'transparent',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
     elevation: 0,
   },
-} as const;
+} as const
 
 // ---------------------------------------------------------------------------
 // Gradients
@@ -275,7 +275,7 @@ export const Gradient = {
     start: { x: 0, y: 0 },
     end: { x: 0, y: 1 },
   },
-} as const;
+} as const
 
 // ---------------------------------------------------------------------------
 // Animation
@@ -289,7 +289,7 @@ export const Easing = {
   durationFast: 150,
   durationBase: 250,
   durationSlow: 400,
-} as const;
+} as const
 
 // ---------------------------------------------------------------------------
 // Glass
@@ -300,7 +300,7 @@ export const Glass = {
   backgroundColor: Colors.glass,
   // blurAmount: 24 — pass to <BlurView intensity={24} />
   blurAmount: 24,
-} as const;
+} as const
 
 // ---------------------------------------------------------------------------
 // Composite: Card presets
@@ -323,4 +323,4 @@ export const CardPreset = {
     backgroundColor: Colors.surfaceContainerHigh,
     borderRadius: Radius.lg,
   },
-} as const;
+} as const
