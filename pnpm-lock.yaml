@@ -4,6 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+packageExtensionsChecksum: sha256-e+lL/Zm9avmfjJyxVPkcDHuKE/e4dLag3fslgYPAJhc=
+
 importers:
 
   .:
@@ -116,7 +118,7 @@ importers:
         version: 8.0.11(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       expo-router:
         specifier: ~6.0.23
-        version: 6.0.23(bac03825feabf471d4964087a38d170b)
+        version: 6.0.23(6097a4d8551c19095a9694dc6f5e235f)
       expo-splash-screen:
         specifier: ^31.0.13
         version: 31.0.13(expo@54.0.33)(typescript@5.9.3)
@@ -2410,6 +2412,7 @@ packages:
       '@expo/metro-runtime': ^6.1.2
       '@react-navigation/drawer': ^7.5.0
       '@testing-library/react-native': '>= 12.0.0'
+      escape-string-regexp: '*'
       expo: '*'
       expo-constants: ^18.0.13
       expo-linking: ^8.0.11
@@ -5420,7 +5423,7 @@ snapshots:
       wrap-ansi: 7.0.0
       ws: 8.20.0
     optionalDependencies:
-      expo-router: 6.0.23(bac03825feabf471d4964087a38d170b)
+      expo-router: 6.0.23(6097a4d8551c19095a9694dc6f5e235f)
       react-native: 0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0)
     transitivePeerDependencies:
       - bufferutil
@@ -7474,7 +7477,7 @@ snapshots:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0)
 
-  expo-router@6.0.23(bac03825feabf471d4964087a38d170b):
+  expo-router@6.0.23(6097a4d8551c19095a9694dc6f5e235f):
     dependencies:
       '@expo/metro-runtime': 6.1.2(expo@54.0.33)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@expo/schema-utils': 0.1.8
