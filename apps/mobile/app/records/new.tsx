@@ -1,5 +1,5 @@
 import { View, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native'
-import { Text } from '../../components/Text'
+import { Text } from '@/components/Text'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
@@ -8,8 +8,8 @@ import {
   CreateSymptomDetailDto,
   Severity,
 } from '@second-body/shared'
-import { BODY_PART_LABELS, SEVERITY_LABELS, SEVERITY_COLOR } from '../../constants/symptom'
-import { useAuth } from '../../lib/AuthContext'
+import { BODY_PART_LABELS, SEVERITY_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
+import { useAuth } from '@/lib/AuthContext'
 import { createRecord } from '../api/records'
 
 export default function NewRecordScreen() {
