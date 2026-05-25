@@ -10,8 +10,7 @@ import {
 } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_LABELS, SEVERITY_COLOR } from '../../constants/symptom'
 import { useAuth } from '../../lib/AuthContext'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+import { createRecord } from '../api/records'
 
 export default function NewRecordScreen() {
   const router = useRouter()
@@ -64,17 +63,10 @@ export default function NewRecordScreen() {
 
     setSubmitting(true)
     try {
-      const res = await fetch(`${API_URL}/records`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId,
-        },
-        body: JSON.stringify({
-          record_date: recordDate,
-          overall_note: overallNote || undefined,
-          details,
-        }),
+      const res = await createRecord(userId, {
+        record_date: recordDate,
+        overall_note: overallNote || undefined,
+        details,
       })
 
       if (!res.ok) {

@@ -7,12 +7,12 @@ import {
   GestureResponderEvent,
   LayoutChangeEvent,
 } from 'react-native'
-import { Text } from '../../../components/Text'
+import { Text } from '../../components/Text'
 import { BodyPartCode, Severity } from '@second-body/shared'
 import { SVG_DISPLAY_W, SVG_DISPLAY_H, VIEW_BOX_W, VIEW_BOX_H, hitTestZones } from './bodyPartZones'
 import { BodyFigureSvg } from './BodyFigureSvg'
 import { SymptomSheet } from './SymptomSheet'
-import { Colors } from '../../../constants/theme'
+import { Colors } from '../../constants/theme'
 
 const MIN_SCALE = 0.6
 const MAX_SCALE = 6
