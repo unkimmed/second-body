@@ -6,9 +6,8 @@ import { useFocusEffect } from 'expo-router'
 import { SymptomRecord, BodyPartCode, Severity } from '@second-body/shared'
 import { Colors } from '../constants/theme'
 import { useAuth } from '../lib/AuthContext'
-import { BodyMapView } from './components/bodyMap'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+import { BodyMapView } from '../components/bodyMap'
+import { fetchRecords, createRecord, patchRecord } from './api/records'
 
 function todayString() {
   return new Date().toISOString().slice(0, 10)
@@ -22,17 +21,14 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (userId) fetchRecords()
+      if (userId) loadRecords()
     }, [userId]),
   )
 
-  async function fetchRecords() {
+  async function loadRecords() {
     try {
-      const res = await fetch(`${API_URL}/records`, {
-        headers: { 'x-user-id': userId! },
-      })
-      const data = await res.json()
-      setRecords(data as SymptomRecord[])
+      const data = await fetchRecords(userId!)
+      setRecords(data)
     } catch (e) {
       console.error('기록 목록 불러오기 실패:', e)
     } finally {
@@ -56,22 +52,13 @@ export default function HomeScreen() {
       const today = todayString()
       try {
         if (!todayRecord) {
-          // Create a new record for today
-          const res = await fetch(`${API_URL}/records`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-id': userId!,
-            },
-            body: JSON.stringify({
-              record_date: today,
-              details: [{ body_part_code: code, severity, note: note || undefined }],
-            }),
+          const res = await createRecord(userId!, {
+            record_date: today,
+            details: [{ body_part_code: code, severity, note: note || undefined }],
           })
-          const created = await res.json()
+          const created = (await res.json()) as SymptomRecord
           setRecords((prev) => [created, ...prev])
         } else {
-          // Merge into existing record (replace same body part, keep others)
           const existingDetails = (todayRecord.details ?? []).filter(
             (d) => d.body_part_code !== code,
           )
@@ -83,15 +70,7 @@ export default function HomeScreen() {
             })),
             { body_part_code: code, severity, note: note || undefined },
           ]
-          const res = await fetch(`${API_URL}/records/${todayRecord.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-id': userId!,
-            },
-            body: JSON.stringify({ details: newDetails }),
-          })
-          const updated = await res.json()
+          const updated = await patchRecord(todayRecord.id, userId!, newDetails)
           setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
         }
       } catch (e) {

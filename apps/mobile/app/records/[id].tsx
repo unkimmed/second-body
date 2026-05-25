@@ -6,8 +6,7 @@ import { useEffect, useState } from 'react'
 import { SymptomRecord, Severity } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '../../constants/symptom'
 import { useAuth } from '../../lib/AuthContext'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+import { fetchRecord, deleteRecord } from '../api/records'
 
 export default function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -21,11 +20,8 @@ export default function RecordDetailScreen() {
 
   useEffect(() => {
     if (!userId) return
-    fetch(`${API_URL}/records/${id}`, {
-      headers: { 'x-user-id': userId },
-    })
-      .then((r) => r.json())
-      .then((data) => setRecord(data as SymptomRecord))
+    fetchRecord(id, userId)
+      .then((data) => setRecord(data))
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [id, userId])
@@ -38,10 +34,7 @@ export default function RecordDetailScreen() {
     }
     setDeleting(true)
     try {
-      const res = await fetch(`${API_URL}/records/${id}`, {
-        method: 'DELETE',
-        headers: { 'x-user-id': userId },
-      })
+      const res = await deleteRecord(id, userId)
       if (!res.ok) {
         const text = await res.text().catch(() => '')
         setErrorMessage(`삭제 실패 (${res.status}): ${text || '원인 불명'}`)
