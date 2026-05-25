@@ -1,11 +1,11 @@
 import { View, ScrollView, ActivityIndicator, TouchableOpacity, Modal } from 'react-native'
-import { Text } from '../../components/Text'
-import { Colors } from '../../constants/theme'
+import { Text } from '@/components/Text'
+import { Colors } from '@/constants/theme'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { SymptomRecord, Severity } from '@second-body/shared'
-import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '../../constants/symptom'
-import { useAuth } from '../../lib/AuthContext'
+import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/symptom'
+import { useAuth } from '@/lib/AuthContext'
 import { fetchRecord, deleteRecord } from '../api/records'
 
 export default function RecordDetailScreen() {

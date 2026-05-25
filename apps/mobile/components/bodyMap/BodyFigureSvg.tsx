@@ -2,7 +2,7 @@ import React from 'react'
 import Svg, { Ellipse, Rect } from 'react-native-svg'
 import { BodyPartCode, Severity } from '@second-body/shared'
 import { ZoneShape, VIEW_BOX, SVG_DISPLAY_W, SVG_DISPLAY_H, getVisibleZones } from './bodyPartZones'
-import { Colors } from '../../constants/theme'
+import { Colors } from '@/constants/theme'
 
 // ─── Severity fill colours (semi-transparent) ────────────────────────────────
 const SEVERITY_FILL: Record<Severity, string> = {
