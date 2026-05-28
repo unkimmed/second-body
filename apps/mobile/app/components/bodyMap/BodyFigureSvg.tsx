@@ -6,19 +6,19 @@ import { Colors } from '../../../constants/theme'
 
 // ─── Severity fill colours (semi-transparent) ────────────────────────────────
 const SEVERITY_FILL: Record<Severity, string> = {
-  1: 'rgba(134, 239, 172, 0.55)',
-  2: 'rgba(190, 242, 100, 0.55)',
-  3: 'rgba(253, 224,  71, 0.55)',
-  4: 'rgba(251, 146,  60, 0.60)',
-  5: 'rgba(239,  68,  68, 0.65)',
+  1: 'rgba(239, 68, 68, 0.20)',
+  2: 'rgba(239, 68, 68, 0.35)',
+  3: 'rgba(239, 68, 68, 0.55)',
+  4: 'rgba(239, 68, 68, 0.75)',
+  5: 'rgba(239, 68, 68, 0.90)',
 }
 
 const SEVERITY_STROKE: Record<Severity, string> = {
-  1: 'rgba(74, 222, 128, 0.8)',
-  2: 'rgba(163, 230, 53, 0.8)',
-  3: 'rgba(234, 179, 8, 0.8)',
-  4: 'rgba(234, 88, 12, 0.8)',
-  5: 'rgba(220, 38, 38, 0.8)',
+  1: 'rgba(220, 38, 38, 0.45)',
+  2: 'rgba(220, 38, 38, 0.60)',
+  3: 'rgba(220, 38, 38, 0.75)',
+  4: 'rgba(220, 38, 38, 0.85)',
+  5: 'rgba(220, 38, 38, 0.95)',
 }
 
 const BODY_FILL = '#f5ede8' // warm skin silhouette
