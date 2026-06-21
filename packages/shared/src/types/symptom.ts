@@ -80,38 +80,26 @@ export interface BodyPart {
   display_order: number
 }
 
-export interface SymptomDetail {
-  id: string
-  record_id: string
-  body_part_code: BodyPartCode
-  severity: Severity
-  note?: string
-  created_at: string
-}
-
 export interface SymptomRecord {
   id: string
   user_id: string
   record_date: string
-  overall_note?: string
+  body_part_code: BodyPartCode
+  severity: Severity
+  note?: string
   created_at: string
   updated_at: string
-  details?: SymptomDetail[]
 }
 
-export interface CreateSymptomDetailDto {
+export interface CreateSymptomRecordDto {
+  record_date: string
   body_part_code: BodyPartCode
   severity: Severity
   note?: string
 }
 
-export interface CreateSymptomRecordDto {
-  record_date: string
-  overall_note?: string
-  details: CreateSymptomDetailDto[]
-}
-
 export interface UpdateSymptomRecordDto {
-  overall_note?: string
-  details?: CreateSymptomDetailDto[]
+  body_part_code?: BodyPartCode
+  severity?: Severity
+  note?: string
 }

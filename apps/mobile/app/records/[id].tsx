@@ -3,7 +3,7 @@ import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { SymptomRecord, Severity } from '@second-body/shared'
+import { SymptomRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/symptom'
 import { useAuth } from '@/lib/AuthContext'
 import { fetchRecord, deleteRecord } from '../api/records'
@@ -66,55 +66,33 @@ export default function RecordDetailScreen() {
     )
   }
 
-  const maxSeverity = record.details?.length
-    ? (Math.max(...record.details.map((d) => d.severity)) as Severity)
-    : null
-
   return (
     <ScrollView className="flex-1 bg-surface-lowest">
       {/* 헤더 배너 */}
-      <View className={`px-5 py-6 ${maxSeverity ? SEVERITY_COLOR[maxSeverity] : 'bg-primary'}`}>
+      <View className={`px-5 py-6 ${SEVERITY_COLOR[record.severity]}`}>
         <Text className="text-surface text-3xl font-bold">{record.record_date}</Text>
-        {record.overall_note ? (
-          <Text className="text-surface/80 mt-1">{record.overall_note}</Text>
-        ) : null}
       </View>
 
       <View className="p-5 gap-4">
-        {/* 부위별 증상 목록 */}
-        {record.details && record.details.length > 0 ? (
-          <View>
-            <Text className="text-sm font-semibold text-on-surface-variant mb-2">
-              부위별 증상 ({record.details.length}개)
-            </Text>
-            <View className="gap-2">
-              {record.details.map((d) => (
-                <View key={d.id} className="bg-surface-low rounded-xl overflow-hidden">
-                  <View className="flex-row">
-                    <View className={`w-1 ${SEVERITY_COLOR[d.severity]}`} />
-                    <View className="flex-1 p-3">
-                      <View className="flex-row items-center justify-between">
-                        <Text className="text-sm font-semibold text-on-surface">
-                          {BODY_PART_LABELS[d.body_part_code]}
-                        </Text>
-                        <Text className="text-xs text-on-surface-variant">
-                          {d.severity}/5 · {SEVERITY_LABELS[d.severity]}
-                        </Text>
-                      </View>
-                      {d.note ? (
-                        <Text className="text-xs text-on-surface-variant mt-1">{d.note}</Text>
-                      ) : null}
-                    </View>
-                  </View>
-                </View>
-              ))}
+        {/* 증상 상세 */}
+        <View className="bg-surface-low rounded-xl overflow-hidden">
+          <View className="flex-row">
+            <View className={`w-1 ${SEVERITY_COLOR[record.severity]}`} />
+            <View className="flex-1 p-4 gap-1">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-base font-semibold text-on-surface">
+                  {BODY_PART_LABELS[record.body_part_code]}
+                </Text>
+                <Text className="text-sm text-on-surface-variant">
+                  {record.severity}/5 · {SEVERITY_LABELS[record.severity]}
+                </Text>
+              </View>
+              {record.note ? (
+                <Text className="text-sm text-on-surface-variant">{record.note}</Text>
+              ) : null}
             </View>
           </View>
-        ) : (
-          <View className="bg-surface-low rounded-xl p-4 items-center">
-            <Text className="text-on-surface-variant text-sm">기록된 부위 증상이 없습니다.</Text>
-          </View>
-        )}
+        </View>
 
         {/* 에러 메시지 */}
         {errorMessage && (
@@ -156,9 +134,7 @@ export default function RecordDetailScreen() {
               <TouchableOpacity
                 onPress={confirmDelete}
                 disabled={deleting}
-                className={`flex-1 py-3 rounded-xl items-center bg-red-500 ${
-                  deleting ? 'opacity-50' : ''
-                }`}
+                className={`flex-1 py-3 rounded-xl items-center bg-red-500 ${deleting ? 'opacity-50' : ''}`}
               >
                 <Text className="text-surface font-bold">{deleting ? '삭제 중...' : '삭제'}</Text>
               </TouchableOpacity>
