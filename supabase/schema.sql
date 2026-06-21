@@ -135,44 +135,27 @@ CREATE TABLE public.avatars (
 
 
 -- ============================================================
--- 4. SYMPTOM_RECORDS (기록 헤더)
--- 한 사용자가 같은 날짜에 여러 기록을 남길 수 있음.
+-- 4. SYMPTOM_RECORDS (증상 기록)
+-- 부위별 증상을 하나의 행에 직접 저장.
 -- ============================================================
 
 CREATE TABLE public.symptom_records (
-  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id      UUID        NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  record_date  DATE        NOT NULL,
-  overall_note TEXT,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id        UUID        NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  record_date    DATE        NOT NULL,
+  body_part_code TEXT        NOT NULL REFERENCES public.body_parts(code),
+  severity       SMALLINT    NOT NULL CHECK (severity BETWEEN 1 AND 5),
+  note           TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 달력뷰 + 오늘 기록 여부 조회 최적화
 CREATE INDEX idx_symptom_records_user_date
   ON public.symptom_records (user_id, record_date DESC);
 
-
--- ============================================================
--- 5. SYMPTOM_DETAILS (부위별 증상)
--- 하나의 기록 안에 여러 부위 증상을 담는 실제 데이터.
--- ============================================================
-
-CREATE TABLE public.symptom_details (
-  id             UUID     PRIMARY KEY DEFAULT gen_random_uuid(),
-  record_id      UUID     NOT NULL REFERENCES public.symptom_records(id) ON DELETE CASCADE,
-  body_part_code TEXT     NOT NULL REFERENCES public.body_parts(code),
-  severity       SMALLINT NOT NULL CHECK (severity BETWEEN 1 AND 5),
-  note           TEXT,
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- 신체 UI 히트맵 집계 쿼리 최적화
-CREATE INDEX idx_symptom_details_record_id
-  ON public.symptom_details (record_id);
-
-CREATE INDEX idx_symptom_details_body_part
-  ON public.symptom_details (body_part_code);
+CREATE INDEX idx_symptom_records_body_part
+  ON public.symptom_records (body_part_code);
 
 
 -- ============================================================
@@ -208,7 +191,6 @@ CREATE TRIGGER trg_symptom_records_updated_at
 ALTER TABLE public.users            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.avatars          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.symptom_records  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.symptom_details  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.body_parts       ENABLE ROW LEVEL SECURITY;
 
 -- USERS: 본인 행만 접근
@@ -225,19 +207,6 @@ CREATE POLICY "avatars: own row only"
 CREATE POLICY "symptom_records: own rows only"
   ON public.symptom_records FOR ALL
   USING (auth.uid() = user_id);
-
--- SYMPTOM_DETAILS: 부모 record의 user_id가 본인인 경우만 접근
--- (direct user_id 컬럼이 없어서 JOIN으로 확인)
-CREATE POLICY "symptom_details: own rows only"
-  ON public.symptom_details FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.symptom_records sr
-      WHERE sr.id = symptom_details.record_id
-        AND sr.user_id = auth.uid()
-    )
-  );
 
 -- BODY_PARTS: 모든 인증 유저가 읽기 가능, 쓰기는 불가
 CREATE POLICY "body_parts: read only for all"
@@ -279,11 +248,12 @@ CREATE POLICY "body_parts: read only for all"
 --   bp2.code AS group_code,
 --   bp2.name_ko,
 --   bp2.svg_path_id,
---   ROUND(AVG(sd.severity)::numeric, 2) AS avg_severity
--- FROM symptom_details sd
--- JOIN body_parts bp3 ON sd.body_part_code = bp3.code
+--   ROUND(AVG(sr.severity)::numeric, 2) AS avg_severity
+-- FROM symptom_records sr
+-- JOIN body_parts bp3 ON sr.body_part_code = bp3.code
 -- JOIN body_parts bp2 ON bp3.parent_code = bp2.code
--- WHERE sd.created_at >= NOW() - INTERVAL '7 days'
+-- WHERE sr.created_at >= NOW() - INTERVAL '7 days'
+--   AND sr.user_id = auth.uid()
 -- GROUP BY bp2.code, bp2.name_ko, bp2.svg_path_id
 -- ORDER BY avg_severity DESC;
 

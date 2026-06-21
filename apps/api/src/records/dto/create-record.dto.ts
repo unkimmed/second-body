@@ -1,46 +1,24 @@
-import {
-  IsString,
-  IsInt,
-  IsIn,
-  IsDateString,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  Min,
-  Max,
-} from 'class-validator'
-import { Type } from 'class-transformer'
+import { IsString, IsInt, IsIn, IsDateString, IsOptional, Min, Max } from 'class-validator'
 import {
   BODY_PART_CODES,
   BodyPartCode,
-  CreateSymptomDetailDto as ICreateSymptomDetailDto,
+  Severity,
   CreateSymptomRecordDto as ICreateSymptomRecordDto,
 } from '@second-body/shared'
 
-export class CreateSymptomDetailDto implements ICreateSymptomDetailDto {
+export class CreateRecordDto implements ICreateSymptomRecordDto {
+  @IsDateString()
+  declare record_date: string
+
   @IsIn(BODY_PART_CODES as readonly string[])
   declare body_part_code: BodyPartCode
 
   @IsInt()
   @Min(1)
   @Max(5)
-  declare severity: 1 | 2 | 3 | 4 | 5
+  declare severity: Severity
 
   @IsOptional()
   @IsString()
   note?: string
-}
-
-export class CreateRecordDto implements ICreateSymptomRecordDto {
-  @IsDateString()
-  declare record_date: string
-
-  @IsOptional()
-  @IsString()
-  overall_note?: string
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateSymptomDetailDto)
-  declare details: CreateSymptomDetailDto[]
 }

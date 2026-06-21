@@ -23,7 +23,7 @@ export class RecordsService {
     const today = new Date().toISOString().slice(0, 10)
     const { data, error } = await this.supabase.client
       .from('symptom_records')
-      .select('*, details:symptom_details(*)')
+      .select('*')
       .eq('user_id', userId)
       .eq('record_date', today)
       .order('created_at', { ascending: false })
@@ -35,7 +35,7 @@ export class RecordsService {
   async findOne(id: string, userId: string): Promise<SymptomRecord> {
     const { data, error } = await this.supabase.client
       .from('symptom_records')
-      .select('*, details:symptom_details(*)')
+      .select('*')
       .eq('id', id)
       .eq('user_id', userId)
       .single()
@@ -45,54 +45,24 @@ export class RecordsService {
   }
 
   async create(userId: string, dto: CreateRecordDto): Promise<SymptomRecord> {
-    const { details, ...recordData } = dto
-
-    const { data: record, error: recordError } = await this.supabase.client
+    const { data, error } = await this.supabase.client
       .from('symptom_records')
-      .insert({ ...recordData, user_id: userId })
+      .insert({ ...dto, user_id: userId })
       .select()
       .single()
 
-    if (recordError) {
-      throw new Error(recordError.message)
-    }
-
-    if (details.length > 0) {
-      const detailRows = details.map((d) => ({ ...d, record_id: record.id }))
-      const { error: detailError } = await this.supabase.client
-        .from('symptom_details')
-        .insert(detailRows)
-
-      if (detailError) throw new Error(detailError.message)
-    }
-
-    return this.findOne(record.id, userId)
+    if (error) throw new Error(error.message)
+    return data as SymptomRecord
   }
 
   async update(id: string, userId: string, dto: UpdateRecordDto): Promise<SymptomRecord> {
-    const { details, overall_note } = dto
+    const { error } = await this.supabase.client
+      .from('symptom_records')
+      .update(dto)
+      .eq('id', id)
+      .eq('user_id', userId)
 
-    if (overall_note !== undefined) {
-      const { error } = await this.supabase.client
-        .from('symptom_records')
-        .update({ overall_note })
-        .eq('id', id)
-        .eq('user_id', userId)
-
-      if (error) throw new Error(error.message)
-    }
-
-    if (details !== undefined) {
-      await this.supabase.client.from('symptom_details').delete().eq('record_id', id)
-
-      if (details.length > 0) {
-        const detailRows = details.map((d) => ({ ...d, record_id: id }))
-        const { error } = await this.supabase.client.from('symptom_details').insert(detailRows)
-
-        if (error) throw new Error(error.message)
-      }
-    }
-
+    if (error) throw new Error(error.message)
     return this.findOne(id, userId)
   }
 

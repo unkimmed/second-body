@@ -1,16 +1,23 @@
-import { IsString, IsOptional, IsArray, ValidateNested } from 'class-validator'
-import { Type } from 'class-transformer'
-import { UpdateSymptomRecordDto as IUpdateSymptomRecordDto } from '@second-body/shared'
-import { CreateSymptomDetailDto } from './create-record.dto'
+import { IsString, IsInt, IsIn, IsOptional, Min, Max } from 'class-validator'
+import {
+  BODY_PART_CODES,
+  BodyPartCode,
+  Severity,
+  UpdateSymptomRecordDto as IUpdateSymptomRecordDto,
+} from '@second-body/shared'
 
 export class UpdateRecordDto implements IUpdateSymptomRecordDto {
   @IsOptional()
-  @IsString()
-  overall_note?: string
+  @IsIn(BODY_PART_CODES as readonly string[])
+  body_part_code?: BodyPartCode
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateSymptomDetailDto)
-  details?: CreateSymptomDetailDto[]
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  severity?: Severity
+
+  @IsOptional()
+  @IsString()
+  note?: string
 }
