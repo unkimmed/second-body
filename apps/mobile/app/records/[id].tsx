@@ -8,6 +8,14 @@ import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/s
 import { useAuth } from '@/lib/AuthContext'
 import { fetchRecord, deleteRecord } from '../api/records'
 
+const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+function formatDate(dateStr: string) {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  return `${dateStr}(${DAYS[date.getDay()]})`
+}
+
 export default function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
@@ -69,27 +77,39 @@ export default function RecordDetailScreen() {
   return (
     <ScrollView className="flex-1 bg-surface-lowest">
       {/* 헤더 배너 */}
-      <View className={`px-5 py-6 ${SEVERITY_COLOR[record.severity]}`}>
-        <Text className="text-surface text-3xl font-bold">{record.record_date}</Text>
+      <View className={`px-5 py-4 ${SEVERITY_COLOR[record.severity]}`}>
+        <Text className="text-sm font-medium">{formatDate(record.record_date)}</Text>
       </View>
 
-      <View className="p-5 gap-4">
-        {/* 증상 상세 */}
-        <View className="bg-surface-low rounded-xl overflow-hidden">
+      <View className="px-5 gap-4">
+        {/* 증상 상세 표 */}
+        <View className="rounded overflow-hidden border border-outline-variant">
+          <View className="flex-row border-b border-outline-variant">
+            <View className="w-20 p-4 bg-surface justify-center">
+              <Text className="text-xs text-on-surface-variant">증상부위</Text>
+            </View>
+            <View className="flex-1 p-4 justify-center">
+              <Text className="text-xs text-on-surface">
+                {BODY_PART_LABELS[record.body_part_code]}
+              </Text>
+            </View>
+          </View>
+          <View className="flex-row border-b border-outline-variant">
+            <View className="w-20 p-4 bg-surface justify-center">
+              <Text className="text-xs text-on-surface-variant">심각도</Text>
+            </View>
+            <View className="flex-1 p-4 justify-center">
+              <Text className="text-xs text-on-surface">
+                {record.severity}/5 · {SEVERITY_LABELS[record.severity]}
+              </Text>
+            </View>
+          </View>
           <View className="flex-row">
-            <View className={`w-1 ${SEVERITY_COLOR[record.severity]}`} />
-            <View className="flex-1 p-4 gap-1">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-base font-semibold text-on-surface">
-                  {BODY_PART_LABELS[record.body_part_code]}
-                </Text>
-                <Text className="text-sm text-on-surface-variant">
-                  {record.severity}/5 · {SEVERITY_LABELS[record.severity]}
-                </Text>
-              </View>
-              {record.note ? (
-                <Text className="text-sm text-on-surface-variant">{record.note}</Text>
-              ) : null}
+            <View className="w-20 p-4 bg-surface">
+              <Text className="text-xs text-on-surface-variant">메모</Text>
+            </View>
+            <View className="flex-1 p-4">
+              <Text className="text-xs text-on-surface-variant">{record.note || '없음'}</Text>
             </View>
           </View>
         </View>
@@ -97,17 +117,26 @@ export default function RecordDetailScreen() {
         {/* 에러 메시지 */}
         {errorMessage && (
           <View className="bg-red-50 border border-red-200 rounded-xl p-3">
-            <Text className="text-danger text-sm">{errorMessage}</Text>
+            <Text className="text-danger text-xs">{errorMessage}</Text>
           </View>
         )}
 
-        {/* 삭제 버튼 */}
-        <TouchableOpacity
-          onPress={() => setConfirmOpen(true)}
-          className="border border-red-200 py-4 rounded-2xl items-center mt-4"
-        >
-          <Text className="text-danger font-medium">기록 삭제</Text>
-        </TouchableOpacity>
+        <View className="flex-row justify-between gap-2 w-full">
+          {/* 수정 버튼 */}
+          <TouchableOpacity
+            onPress={() => console.log('수정 기능은 아직 구현되지 않았습니다.')}
+            className="flex-1 border border-outline-variant py-2 rounded-md items-center mt-4"
+          >
+            <Text className="text-primary text-xs font-medium">수정</Text>
+          </TouchableOpacity>
+          {/* 삭제 버튼 */}
+          <TouchableOpacity
+            onPress={() => setConfirmOpen(true)}
+            className="flex-1 border border-red-200 py-2 rounded-md items-center mt-4"
+          >
+            <Text className="text-danger text-xs font-medium">기록 삭제</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 삭제 확인 모달 */}
@@ -118,7 +147,7 @@ export default function RecordDetailScreen() {
         onRequestClose={() => !deleting && setConfirmOpen(false)}
       >
         <View className="flex-1 bg-black/50 items-center justify-center px-6">
-          <View className="bg-surface-lowest w-full max-w-sm rounded-2xl p-5 gap-4">
+          <View className="bg-surface-lowest w-full max-w-sm rounded-xl p-5 gap-4">
             <Text className="text-lg font-bold text-on-surface">삭제 확인</Text>
             <Text className="text-sm text-on-surface-variant">
               이 기록을 정말 삭제할까요? 이 작업은 되돌릴 수 없습니다.

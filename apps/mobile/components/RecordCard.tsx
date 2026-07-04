@@ -16,13 +16,13 @@ export function RecordCard({ record, onPress }: Props) {
       activeOpacity={0.7}
     >
       <View className="flex-row">
-        <View className={`w-1.5 ${SEVERITY_COLOR[record.severity]}`} />
         <View className="flex-1 p-4 gap-1">
-          <Text className="text-base font-semibold text-on-surface">{record.record_date}</Text>
-          <Text className="text-sm text-on-surface">
+          <Text className="text-xs font-semibold text-on-surface">{record.record_date}</Text>
+          <Text className="text-xs text-on-surface">
             {BODY_PART_LABELS[record.body_part_code]}
             <Text className="text-xs text-on-surface-variant">
-              {' '}· {SEVERITY_LABELS[record.severity]}
+              {' '}
+              · {SEVERITY_LABELS[record.severity]}
             </Text>
           </Text>
           {record.note ? (

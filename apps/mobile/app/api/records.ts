@@ -1,4 +1,4 @@
-import { CreateSymptomRecordDto, SymptomRecord } from '@second-body/shared'
+import { CreateSymptomRecordDto, UpdateSymptomRecordDto, SymptomRecord } from '@second-body/shared'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/api'
 
@@ -29,6 +29,19 @@ export async function createRecord(
     headers: jsonHeaders(userId),
     body: JSON.stringify(payload),
   })
+}
+
+export async function patchRecord(
+  id: string,
+  userId: string,
+  payload: UpdateSymptomRecordDto,
+): Promise<SymptomRecord> {
+  const res = await fetch(`${API_URL}/records/${id}`, {
+    method: 'PATCH',
+    headers: jsonHeaders(userId),
+    body: JSON.stringify(payload),
+  })
+  return res.json() as Promise<SymptomRecord>
 }
 
 export async function deleteRecord(id: string, userId: string): Promise<Response> {

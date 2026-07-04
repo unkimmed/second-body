@@ -39,14 +39,16 @@ export default function RecordsScreen() {
 
   return (
     <ScrollView className="flex-1 bg-surface-lowest">
-      <View className="px-5 py-6 bg-primary">
-        <Text className="text-surface text-2xl font-bold">증상 기록</Text>
-        <Text className="text-surface/70 mt-1 text-sm">
+      <View className="px-5 py-6 ">
+        <Text style={{ color: Colors.onSurface }} className="text-l font-bold">
+          증상 기록
+        </Text>
+        <Text style={{ color: Colors.onSurfaceVariant }} className="mt-1 text-xs">
           {records.length > 0 ? `총 ${records.length}개의 기록` : '기록 없음'}
         </Text>
       </View>
 
-      <View className="p-5 gap-3">
+      <View className="px-5 gap-3">
         {records.length === 0 ? (
           <View className="bg-surface-low rounded-2xl p-8 items-center">
             <Text className="text-on-surface-variant text-sm">아직 기록된 증상이 없습니다.</Text>
