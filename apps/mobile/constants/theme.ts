@@ -9,10 +9,10 @@
 
 export const Colors = {
   // Surface hierarchy (stacked vellum layers)
-  surface: '#fbf9f5', // Base — the foundation of the sanctuary
-  surfaceContainerLow: '#f5f4ef', // Secondary content sections
+  surface: '#f9f8f8', // Base — the foundation of the sanctuary
+  surfaceContainerLow: '#ededed', // Secondary content sections
   surfaceContainerLowest: '#ffffff', // Interactive cards — pops against cream base
-  surfaceContainer: '#f0efe9', // Mid-level container
+  surfaceContainer: '#f0f0f0', // Mid-level container
   surfaceContainerHigh: '#e9e8e3', // Nested elements (search bars, toggle backgrounds)
 
   // Primary accent

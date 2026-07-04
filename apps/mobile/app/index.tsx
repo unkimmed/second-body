@@ -36,48 +36,42 @@ export default function HomeScreen() {
     }
   }
 
-  // Today's record derived from the record list
-  const todayRecord = useMemo(
-    () => records.find((r) => r.record_date === todayString()) ?? null,
+  // Today's records — one per body part
+  const todayRecords = useMemo(
+    () => records.filter((r) => r.record_date === todayString()),
     [records],
   )
 
-  const severityMap = useMemo<Partial<Record<BodyPartCode, Severity>>>(() => {
-    if (!todayRecord?.details) return {}
-    return Object.fromEntries(todayRecord.details.map((d) => [d.body_part_code, d.severity]))
-  }, [todayRecord])
+  const severityMap = useMemo<Partial<Record<BodyPartCode, Severity>>>(
+    () => Object.fromEntries(todayRecords.map((r) => [r.body_part_code, r.severity])),
+    [todayRecords],
+  )
 
   const handleSaveSymptom = useCallback(
     async (code: BodyPartCode, severity: Severity, note: string) => {
-      const today = todayString()
+      const existing = todayRecords.find((r) => r.body_part_code === code)
       try {
-        if (!todayRecord) {
+        if (!existing) {
           const res = await createRecord(userId!, {
-            record_date: today,
-            details: [{ body_part_code: code, severity, note: note || undefined }],
+            record_date: todayString(),
+            body_part_code: code,
+            severity,
+            note: note || undefined,
           })
           const created = (await res.json()) as SymptomRecord
           setRecords((prev) => [created, ...prev])
         } else {
-          const existingDetails = (todayRecord.details ?? []).filter(
-            (d) => d.body_part_code !== code,
-          )
-          const newDetails = [
-            ...existingDetails.map((d) => ({
-              body_part_code: d.body_part_code,
-              severity: d.severity,
-              note: d.note,
-            })),
-            { body_part_code: code, severity, note: note || undefined },
-          ]
-          const updated = await patchRecord(todayRecord.id, userId!, newDetails)
+          const updated = await patchRecord(existing.id, userId!, {
+            severity,
+            note: note || undefined,
+          })
           setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
         }
       } catch (e) {
         console.error('증상 저장 실패:', e)
       }
     },
-    [todayRecord, userId],
+    [todayRecords, userId],
   )
 
   if (loading) {
@@ -89,7 +83,7 @@ export default function HomeScreen() {
   }
 
   const today = todayString()
-  const recordedCount = todayRecord?.details?.length ?? 0
+  const recordedCount = todayRecords.length
 
   return (
     <View style={styles.root}>

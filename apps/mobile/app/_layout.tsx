@@ -4,8 +4,8 @@ import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
-import { Colors, FontFamily, FontWeight } from '../constants/theme'
 import { AuthProvider, useAuth } from '../lib/AuthContext'
+import { AppHeader } from '../components/AppHeader'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -28,12 +28,7 @@ function RootNavigator() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: Colors.primary },
-        headerTintColor: Colors.surface,
-        headerTitleStyle: {
-          fontFamily: FontFamily.base,
-          fontWeight: FontWeight.bold,
-        },
+        header: (props) => <AppHeader {...props} />,
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Second Body' }} />

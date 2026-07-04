@@ -11,10 +11,10 @@ module.exports = {
       },
       colors: {
         // Surface hierarchy
-        surface: '#fbf9f5',
-        'surface-low': '#f5f4ef',
+        surface: '#f9f8f8',
+        'surface-low': '#ededed',
         'surface-lowest': '#ffffff',
-        'surface-container': '#f0efe9',
+        'surface-container': '#f0f0f0',
         'surface-high': '#e9e8e3',
         // Primary
         primary: '#456373',
