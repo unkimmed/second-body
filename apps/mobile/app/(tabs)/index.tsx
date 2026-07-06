@@ -1,19 +1,21 @@
 import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native'
-import { Text } from '../components/Text'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Text } from '@/components/Text'
 import { useRouter } from 'expo-router'
 import { useCallback, useMemo, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { SymptomRecord, BodyPartCode, Severity } from '@second-body/shared'
-import { Colors } from '../constants/theme'
-import { useAuth } from '../lib/AuthContext'
-import { BodyMapView } from '../components/bodyMap'
-import { fetchRecords, createRecord, patchRecord } from './api/records'
+import { Colors } from '@/constants/theme'
+import { useAuth } from '@/lib/AuthContext'
+import { BodyMapView } from '@/components/bodyMap'
+import { fetchRecords, createRecord, patchRecord } from '../api/records'
 
 function todayString() {
   return new Date().toISOString().slice(0, 10)
 }
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets()
   const router = useRouter()
   const { userId, signOut } = useAuth()
   const [records, setRecords] = useState<SymptomRecord[]>([])
@@ -36,7 +38,6 @@ export default function HomeScreen() {
     }
   }
 
-  // Today's records — one per body part
   const todayRecords = useMemo(
     () => records.filter((r) => r.record_date === todayString()),
     [records],
@@ -87,8 +88,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View>
           <Text style={styles.headerTitle}>내 몸 지도</Text>
           <Text style={styles.headerSub}>
@@ -109,7 +109,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Body map — fills the rest of the screen */}
       <BodyMapView severityMap={severityMap} onSaveSymptom={handleSaveSymptom} />
     </View>
   )
@@ -129,7 +128,6 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',

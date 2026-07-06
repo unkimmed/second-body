@@ -1,4 +1,5 @@
 import { View, ScrollView, ActivityIndicator } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
 import { useRouter } from 'expo-router'
@@ -10,6 +11,7 @@ import { fetchRecords } from '../api/records'
 import { RecordCard } from '@/components/RecordCard'
 
 export default function RecordsScreen() {
+  const insets = useSafeAreaInsets()
   const router = useRouter()
   const { userId } = useAuth()
   const [records, setRecords] = useState<SymptomRecord[]>([])
@@ -39,7 +41,7 @@ export default function RecordsScreen() {
 
   return (
     <ScrollView className="flex-1 bg-surface-lowest">
-      <View className="px-5 py-6 ">
+      <View className="px-5 py-6" style={{ paddingTop: insets.top + 24 }}>
         <Text style={{ color: Colors.onSurface }} className="text-l font-bold">
           증상 기록
         </Text>
