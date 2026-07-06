@@ -1,12 +1,15 @@
-import { View, ScrollView, ActivityIndicator, TouchableOpacity, Modal } from 'react-native'
+import { View, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { SymptomRecord } from '@second-body/shared'
-import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/symptom'
+import { BodyPartCode, Severity, SymptomRecord } from '@second-body/shared'
+import { SEVERITY_COLOR } from '@/constants/symptom'
 import { useAuth } from '@/lib/AuthContext'
-import { fetchRecord, deleteRecord } from '../api/records'
+import { fetchRecord, deleteRecord, patchRecord } from '../api/records'
+import { RecordDetailCard } from '@/components/RecordDetailCard'
+import { RecordEditForm } from '@/components/RecordEditForm'
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -22,9 +25,16 @@ export default function RecordDetailScreen() {
   const { userId } = useAuth()
   const [record, setRecord] = useState<SymptomRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editBodyPartCode, setEditBodyPartCode] = useState<BodyPartCode | null>(null)
+  const [editSeverity, setEditSeverity] = useState<Severity>(3)
+  const [editNote, setEditNote] = useState('')
+  const [saving, setSaving] = useState(false)
+
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!userId) return
@@ -34,8 +44,41 @@ export default function RecordDetailScreen() {
       .finally(() => setLoading(false))
   }, [id, userId])
 
-  async function confirmDelete() {
+  function startEditing() {
+    if (!record) return
+    setEditBodyPartCode(record.body_part_code)
+    setEditSeverity(record.severity)
+    setEditNote(record.note ?? '')
     setErrorMessage(null)
+    setIsEditing(true)
+  }
+
+  function cancelEditing() {
+    setIsEditing(false)
+    setErrorMessage(null)
+  }
+
+  async function saveEdit() {
+    if (!userId || !editBodyPartCode) return
+    setErrorMessage(null)
+    setSaving(true)
+    try {
+      const updated = await patchRecord(id, userId, {
+        body_part_code: editBodyPartCode,
+        severity: editSeverity,
+        note: editNote || undefined,
+      })
+      setRecord(updated)
+      setIsEditing(false)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setErrorMessage(`저장 실패: ${msg}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function confirmDelete() {
     if (!userId) {
       setErrorMessage('로그인이 필요합니다. 다시 로그인해주세요.')
       return
@@ -76,101 +119,79 @@ export default function RecordDetailScreen() {
 
   return (
     <ScrollView className="flex-1 bg-surface-lowest">
-      {/* 헤더 배너 */}
       <View className={`px-5 py-4 ${SEVERITY_COLOR[record.severity]}`}>
         <Text className="text-sm font-medium">{formatDate(record.record_date)}</Text>
       </View>
 
       <View className="px-5 gap-4">
-        {/* 증상 상세 표 */}
-        <View className="rounded overflow-hidden border border-outline-variant">
-          <View className="flex-row border-b border-outline-variant">
-            <View className="w-20 p-4 bg-surface justify-center">
-              <Text className="text-xs text-on-surface-variant">증상부위</Text>
-            </View>
-            <View className="flex-1 p-4 justify-center">
-              <Text className="text-xs text-on-surface">
-                {BODY_PART_LABELS[record.body_part_code]}
-              </Text>
-            </View>
-          </View>
-          <View className="flex-row border-b border-outline-variant">
-            <View className="w-20 p-4 bg-surface justify-center">
-              <Text className="text-xs text-on-surface-variant">심각도</Text>
-            </View>
-            <View className="flex-1 p-4 justify-center">
-              <Text className="text-xs text-on-surface">
-                {record.severity}/5 · {SEVERITY_LABELS[record.severity]}
-              </Text>
-            </View>
-          </View>
-          <View className="flex-row">
-            <View className="w-20 p-4 bg-surface">
-              <Text className="text-xs text-on-surface-variant">메모</Text>
-            </View>
-            <View className="flex-1 p-4">
-              <Text className="text-xs text-on-surface-variant">{record.note || '없음'}</Text>
-            </View>
-          </View>
-        </View>
+        {isEditing ? (
+          <RecordEditForm
+            bodyPartCode={editBodyPartCode}
+            onBodyPartChange={setEditBodyPartCode}
+            severity={editSeverity}
+            onSeverityChange={setEditSeverity}
+            note={editNote}
+            onNoteChange={setEditNote}
+          />
+        ) : (
+          <RecordDetailCard
+            bodyPartCode={record.body_part_code}
+            severity={record.severity}
+            note={record.note}
+          />
+        )}
 
-        {/* 에러 메시지 */}
         {errorMessage && (
           <View className="bg-red-50 border border-red-200 rounded-xl p-3">
             <Text className="text-danger text-xs">{errorMessage}</Text>
           </View>
         )}
 
-        <View className="flex-row justify-between gap-2 w-full">
-          {/* 수정 버튼 */}
-          <TouchableOpacity
-            onPress={() => console.log('수정 기능은 아직 구현되지 않았습니다.')}
-            className="flex-1 border border-outline-variant py-2 rounded-md items-center mt-4"
-          >
-            <Text className="text-primary text-xs font-medium">수정</Text>
-          </TouchableOpacity>
-          {/* 삭제 버튼 */}
-          <TouchableOpacity
-            onPress={() => setConfirmOpen(true)}
-            className="flex-1 border border-red-200 py-2 rounded-md items-center mt-4"
-          >
-            <Text className="text-danger text-xs font-medium">기록 삭제</Text>
-          </TouchableOpacity>
+        <View className="flex-row gap-2 w-full">
+          {isEditing ? (
+            <>
+              <TouchableOpacity
+                onPress={cancelEditing}
+                disabled={saving}
+                className="flex-1 border border-outline-variant py-2 rounded-md items-center mt-4"
+              >
+                <Text className="text-on-surface-variant text-xs font-medium">취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={saveEdit}
+                disabled={saving || !editBodyPartCode}
+                className={`flex-1 py-2 rounded-md items-center mt-4 bg-primary ${saving || !editBodyPartCode ? 'opacity-50' : ''}`}
+              >
+                <Text className="text-surface text-xs font-medium">
+                  {saving ? '저장 중...' : '저장'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                onPress={startEditing}
+                className="flex-1 border border-outline-variant py-2 rounded-md items-center mt-4"
+              >
+                <Text className="text-primary text-xs font-medium">수정</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setConfirmOpen(true)}
+                className="flex-1 border border-red-200 py-2 rounded-md items-center mt-4"
+              >
+                <Text className="text-danger text-xs font-medium">기록 삭제</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
 
-      {/* 삭제 확인 모달 */}
-      <Modal
+      <DeleteConfirmModal
         visible={confirmOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => !deleting && setConfirmOpen(false)}
-      >
-        <View className="flex-1 bg-black/50 items-center justify-center px-6">
-          <View className="bg-surface-lowest w-full max-w-sm rounded-xl p-5 gap-4">
-            <Text className="text-lg font-bold text-on-surface">삭제 확인</Text>
-            <Text className="text-sm text-on-surface-variant">
-              이 기록을 정말 삭제할까요? 이 작업은 되돌릴 수 없습니다.
-            </Text>
-            <View className="flex-row gap-2 mt-2">
-              <TouchableOpacity
-                onPress={() => setConfirmOpen(false)}
-                disabled={deleting}
-                className="flex-1 py-3 rounded-xl items-center bg-surface-high"
-              >
-                <Text className="text-on-surface font-medium">취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={confirmDelete}
-                disabled={deleting}
-                className={`flex-1 py-3 rounded-xl items-center bg-red-500 ${deleting ? 'opacity-50' : ''}`}
-              >
-                <Text className="text-surface font-bold">{deleting ? '삭제 중...' : '삭제'}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        deleting={deleting}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmDelete}
+      />
     </ScrollView>
   )
 }
