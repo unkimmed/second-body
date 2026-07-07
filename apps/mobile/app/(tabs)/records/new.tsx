@@ -1,13 +1,15 @@
 import { View, TextInput, TouchableOpacity, ScrollView } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/components/Text'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { BODY_PART_CODES, BodyPartCode, Severity } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
 import { useAuth } from '@/lib/AuthContext'
-import { createRecord } from '../api/records'
+import { createRecord } from '@/app/api/records'
 
 export default function NewRecordScreen() {
+  const insets = useSafeAreaInsets()
   const router = useRouter()
   const { userId } = useAuth()
   const [recordDate, setRecordDate] = useState(new Date().toISOString().split('T')[0])
@@ -44,7 +46,7 @@ export default function NewRecordScreen() {
         return
       }
 
-      router.back()
+      router.navigate('/')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setErrorMessage(`네트워크 오류: ${msg}`)
@@ -56,9 +58,16 @@ export default function NewRecordScreen() {
   return (
     <ScrollView
       className="flex-1 bg-surface-lowest"
-      contentContainerClassName="p-5 gap-5"
+      contentContainerStyle={{
+        paddingTop: insets.top + 24,
+        paddingHorizontal: 20,
+        paddingBottom: 24,
+        gap: 20,
+      }}
       keyboardShouldPersistTaps="handled"
     >
+      <Text className="text-xl font-bold text-on-surface">증상 기록하기</Text>
+
       {/* 날짜 */}
       <View>
         <Text className="text-sm font-medium text-on-surface-variant mb-1">날짜</Text>
@@ -113,7 +122,9 @@ export default function NewRecordScreen() {
             >
               <Text
                 className={
-                  severity === s ? 'text-surface font-bold text-sm' : 'text-on-surface-variant text-sm'
+                  severity === s
+                    ? 'text-surface font-bold text-sm'
+                    : 'text-on-surface-variant text-sm'
                 }
               >
                 {s}
@@ -137,14 +148,12 @@ export default function NewRecordScreen() {
         />
       </View>
 
-      {/* 에러 메시지 */}
       {errorMessage && (
         <View className="bg-red-50 border border-red-200 rounded-xl p-3">
           <Text className="text-danger text-sm">{errorMessage}</Text>
         </View>
       )}
 
-      {/* 저장 버튼 */}
       <TouchableOpacity
         onPress={handleSubmit}
         disabled={submitting}
