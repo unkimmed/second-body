@@ -1,0 +1,35 @@
+name: CI
+
+# PR/메인 푸시에서 타입체크·빌드로 회귀 방지 (테스트·lint 도입 전 최소 게이트)
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm shared:build
+
+      - name: Typecheck API
+        run: pnpm --filter api exec tsc --noEmit
+
+      - name: Build API
+        run: pnpm api:build
+
+      - name: Typecheck mobile
+        run: pnpm --filter mobile exec tsc --noEmit

@@ -14,8 +14,9 @@ async function bootstrap() {
   // DTO 유효성 검사 자동 적용
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
 
+  // PaaS(Render 등)는 PORT 를 주입하고 0.0.0.0 바인딩을 요구함
   const port = process.env.PORT ?? 3001
-  await app.listen(port)
-  console.log(`API 서버 실행 중: http://localhost:${port}/api`)
+  await app.listen(port, '0.0.0.0')
+  console.log(`API 서버 실행 중 (port ${port})`)
 }
 bootstrap()
