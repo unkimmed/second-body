@@ -170,14 +170,13 @@ export const BODY_ZONES: BodyZone[] = [
 
   // ── FACE DETAILS (front only — require zoom to tap) ──────────────
   // Rendered last so they sit on top of the head zone in hit-testing.
-  {
-    code: 'ear',
-    view: 'front',
-    shape: { type: 'ellipse', cx: 43, cy: 16, rx: 3.5, ry: 6 },
-    extraShapes: [{ type: 'ellipse', cx: 77, cy: 16, rx: 3.5, ry: 6 }],
-  },
+  // Low x = body's left (matches left_upper_arm at x:24); front view is flipped
+  // so these appear mirrored to the viewer, matching anatomical convention.
+  { code: 'left_ear', view: 'front', shape: { type: 'ellipse', cx: 43, cy: 16, rx: 3.5, ry: 6 } },
+  { code: 'right_ear', view: 'front', shape: { type: 'ellipse', cx: 77, cy: 16, rx: 3.5, ry: 6 } },
   { code: 'skin_face', view: 'front', shape: { type: 'ellipse', cx: 60, cy: 15, rx: 13, ry: 13 } },
-  { code: 'eye', view: 'front', shape: { type: 'rect', x: 49, y: 9, width: 22, height: 7, rx: 3 } },
+  { code: 'left_eye', view: 'front', shape: { type: 'rect', x: 49, y: 9, width: 10, height: 7, rx: 3 } },
+  { code: 'right_eye', view: 'front', shape: { type: 'rect', x: 61, y: 9, width: 10, height: 7, rx: 3 } },
   { code: 'nose', view: 'front', shape: { type: 'ellipse', cx: 60, cy: 20, rx: 4, ry: 5 } },
   {
     code: 'mouth',
