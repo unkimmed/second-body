@@ -119,11 +119,11 @@ export default function RecordDetailScreen() {
 
   return (
     <ScrollView className="flex-1 bg-surface-lowest">
-      <View className={`px-5 py-4 ${SEVERITY_COLOR[record.severity]}`}>
+      <View className={`px-5 py-4`}>
         <Text className="text-sm font-medium">{formatDate(record.record_date)}</Text>
       </View>
 
-      <View className="px-5 gap-4">
+      <View className="px-5 gap-4 mt-4">
         {isEditing ? (
           <RecordEditForm
             bodyPartCode={editBodyPartCode}
