@@ -44,25 +44,40 @@ interface Props {
   visible: boolean
   partCode: BodyPartCode | null
   initialSeverity?: Severity
+  initialNote?: string
+  /** 이미 진행중인 증상이면 해결 버튼 노출 */
+  canResolve?: boolean
   onSave: (severity: Severity, note: string) => Promise<void>
+  onResolve?: () => Promise<void>
   onClose: () => void
 }
 
 const SEVERITIES: Severity[] = [1, 2, 3, 4, 5]
 
-export function SymptomSheet({ visible, partCode, initialSeverity, onSave, onClose }: Props) {
+export function SymptomSheet({
+  visible,
+  partCode,
+  initialSeverity,
+  initialNote,
+  canResolve,
+  onSave,
+  onResolve,
+  onClose,
+}: Props) {
   const [severity, setSeverity] = useState<Severity | null>(initialSeverity ?? null)
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(initialNote ?? '')
   const [saving, setSaving] = useState(false)
+  const [resolving, setResolving] = useState(false)
 
   // Reset state when the sheet opens for a new part
   useEffect(() => {
     if (visible) {
       setSeverity(initialSeverity ?? null)
-      setNote('')
+      setNote(initialNote ?? '')
       setSaving(false)
+      setResolving(false)
     }
-  }, [visible, partCode, initialSeverity])
+  }, [visible, partCode, initialSeverity, initialNote])
 
   // ── Slide-up animation ────────────────────────────────────────────────────
   const slideAnim = useRef(new RNAnimated.Value(0)).current
@@ -91,6 +106,16 @@ export function SymptomSheet({ visible, partCode, initialSeverity, onSave, onClo
       setSaving(false)
     }
   }, [severity, note, onSave, saving])
+
+  const handleResolve = useCallback(async () => {
+    if (!onResolve || resolving) return
+    setResolving(true)
+    try {
+      await onResolve()
+    } finally {
+      setResolving(false)
+    }
+  }, [onResolve, resolving])
 
   if (!partCode) return null
 
@@ -164,6 +189,22 @@ export function SymptomSheet({ visible, partCode, initialSeverity, onSave, onClo
               returnKeyType="done"
             />
           </View>
+
+          {/* Resolve (진행중 증상일 때만) */}
+          {canResolve && onResolve && (
+            <TouchableOpacity
+              style={styles.resolveBtn}
+              onPress={handleResolve}
+              activeOpacity={0.8}
+              disabled={resolving}
+            >
+              {resolving ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Text style={styles.resolveText}>✓ 해결 완료</Text>
+              )}
+            </TouchableOpacity>
+          )}
 
           {/* Actions */}
           <View style={styles.actions}>
@@ -283,6 +324,20 @@ const styles = StyleSheet.create({
     color: Colors.onSurface,
     flex: 1,
     lineHeight: 20,
+  },
+  resolveBtn: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingVertical: 12,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    alignItems: 'center',
+  },
+  resolveText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.primary,
   },
   actions: {
     flexDirection: 'row',

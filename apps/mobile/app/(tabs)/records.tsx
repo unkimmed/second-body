@@ -7,7 +7,7 @@ import { useCallback, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { SymptomRecord } from '@second-body/shared'
 import { useAuth } from '@/lib/AuthContext'
-import { fetchRecords } from '../api/records'
+import { fetchRecords, resolveRecord } from '../api/records'
 import { RecordCard } from '@/components/RecordCard'
 
 export default function RecordsScreen() {
@@ -30,6 +30,16 @@ export default function RecordsScreen() {
         .finally(() => setLoading(false))
     }, [userId]),
   )
+
+  async function handleResolve(recordId: string, resolved: boolean) {
+    if (!userId) return
+    try {
+      const updated = await resolveRecord(recordId, userId, resolved)
+      setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+    } catch (e) {
+      console.error('해결 처리 실패:', e)
+    }
+  }
 
   if (loading) {
     return (
@@ -61,6 +71,7 @@ export default function RecordsScreen() {
               key={record.id}
               record={record}
               onPress={() => router.push(`/records/${record.id}`)}
+              onResolve={(resolved) => handleResolve(record.id, resolved)}
             />
           ))
         )}
