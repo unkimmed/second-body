@@ -1,7 +1,7 @@
 import React from 'react'
-import Svg, { Ellipse, Rect } from 'react-native-svg'
+import Svg, { Ellipse, Rect, G } from 'react-native-svg'
 import { BodyPartCode, Severity } from '@second-body/shared'
-import { ZoneShape, VIEW_BOX, SVG_DISPLAY_W, SVG_DISPLAY_H, getVisibleZones } from './bodyPartZones'
+import { ZoneShape, VIEW_BOX, VIEW_BOX_W, SVG_DISPLAY_W, SVG_DISPLAY_H, getVisibleZones } from './bodyPartZones'
 import { Colors } from '@/constants/theme'
 
 // ─── Severity fill colours (semi-transparent) ────────────────────────────────
@@ -72,27 +72,32 @@ interface Props {
 
 export function BodyFigureSvg({ bodyView, severityMap, selectedCode }: Props) {
   const zones = getVisibleZones(bodyView)
+  // Front view: flip horizontally so the body's left/right match anatomical convention
+  // (viewer's left = body's right, like facing a person)
+  const flipTransform = bodyView === 'front' ? `translate(${VIEW_BOX_W}, 0) scale(-1, 1)` : undefined
 
   return (
     <Svg width={SVG_DISPLAY_W} height={SVG_DISPLAY_H} viewBox={VIEW_BOX}>
-      {/* ── Silhouette pass: fill body shape in skin colour, no border ── */}
-      {zones.map((zone) => {
-        const shapes = [zone.shape, ...(zone.extraShapes ?? [])]
-        return shapes.map((s, si) => renderShape(s, BODY_FILL, 'none', 0, `sil-${zone.code}-${si}`))
-      })}
+      <G transform={flipTransform}>
+        {/* ── Silhouette pass: fill body shape in skin colour, no border ── */}
+        {zones.map((zone) => {
+          const shapes = [zone.shape, ...(zone.extraShapes ?? [])]
+          return shapes.map((s, si) => renderShape(s, BODY_FILL, 'none', 0, `sil-${zone.code}-${si}`))
+        })}
 
-      {/* ── Interactive zone pass: severity colour + stroke ─────────── */}
-      {zones.map((zone) => {
-        const severity = severityMap[zone.code]
-        const isSelected = selectedCode === zone.code
+        {/* ── Interactive zone pass: severity colour + stroke ─────────── */}
+        {zones.map((zone) => {
+          const severity = severityMap[zone.code]
+          const isSelected = selectedCode === zone.code
 
-        const fill = severity ? SEVERITY_FILL[severity] : ZONE_FILL
-        const stroke = isSelected ? SEL_STROKE : severity ? SEVERITY_STROKE[severity] : ZONE_STROKE
-        const sw = isSelected ? 1.2 : severity ? 0.8 : 0.5
+          const fill = severity ? SEVERITY_FILL[severity] : ZONE_FILL
+          const stroke = isSelected ? SEL_STROKE : severity ? SEVERITY_STROKE[severity] : ZONE_STROKE
+          const sw = isSelected ? 1.2 : severity ? 0.8 : 0.5
 
-        const shapes = [zone.shape, ...(zone.extraShapes ?? [])]
-        return shapes.map((s, si) => renderShape(s, fill, stroke, sw, `zone-${zone.code}-${si}`))
-      })}
+          const shapes = [zone.shape, ...(zone.extraShapes ?? [])]
+          return shapes.map((s, si) => renderShape(s, fill, stroke, sw, `zone-${zone.code}-${si}`))
+        })}
+      </G>
     </Svg>
   )
 }

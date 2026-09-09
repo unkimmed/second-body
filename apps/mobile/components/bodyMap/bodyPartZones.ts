@@ -211,12 +211,13 @@ export function hitTestZones(
   view: 'front' | 'back',
 ): BodyPartCode | null {
   const zones = getVisibleZones(view)
+  const testX = view === 'front' ? VIEW_BOX_W - svgX : svgX
   for (let i = zones.length - 1; i >= 0; i--) {
     const zone = zones[i]
-    if (hitShape(zone.shape, svgX, svgY)) return zone.code
+    if (hitShape(zone.shape, testX, svgY)) return zone.code
     if (zone.extraShapes) {
       for (const extra of zone.extraShapes) {
-        if (hitShape(extra, svgX, svgY)) return zone.code
+        if (hitShape(extra, testX, svgY)) return zone.code
       }
     }
   }
