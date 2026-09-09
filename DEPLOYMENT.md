@@ -2,12 +2,12 @@
 
 이 문서는 **웹 우선** 배포 프로세스를 정의한다. 구성 요소는 4개다.
 
-| 구성 | 무엇 | 어디에 | 방식 |
-|---|---|---|---|
-| API | NestJS (상주 프로세스) | **Render** Web Service | 수동(Actions → Deploy Hook) |
-| Web | Expo Web (SPA) | **Vercel** | 수동(Actions → Deploy Hook) |
-| DB | Supabase (PostgreSQL) | Supabase Cloud | 마이그레이션 수동/CLI |
-| Shared | 타입 패키지 | (빌드 산출물) | 각 빌드에서 `pnpm shared:build` |
+| 구성   | 무엇                   | 어디에                 | 방식                            |
+| ------ | ---------------------- | ---------------------- | ------------------------------- |
+| API    | NestJS (상주 프로세스) | **Render** Web Service | 수동(Actions → Deploy Hook)     |
+| Web    | Expo Web (SPA)         | **Vercel**             | 자동(main push 시)              |
+| DB     | Supabase (PostgreSQL)  | Supabase Cloud         | 마이그레이션 수동/CLI           |
+| Shared | 타입 패키지            | (빌드 산출물)          | 각 빌드에서 `pnpm shared:build` |
 
 백엔드는 Render(상주형), 프론트는 Vercel(정적/SPA)로 **분리**한다.
 
@@ -63,7 +63,7 @@ supabase db push                                    # 미적용 마이그레이�
 
 ## 3. Web 배포 (Vercel)
 
-설정은 레포의 `vercel.json` 에 있다 (install/build/output/rewrite + `git.deploymentEnabled:false` 로 push 자동배포 끔 → 수동 전용).
+설정은 레포의 `vercel.json` 에 있다 (install/build/output/rewrite). **main push 시 자동 배포**된다.
 
 1. Vercel → **Add New → Project** → 이 레포 import
 2. **Root Directory: 레포 루트**(기본) 유지. Framework Preset: **Other**
@@ -71,10 +71,11 @@ supabase db push                                    # 미적용 마이그레이�
 3. **Environment Variables** 입력:
    - `EXPO_PUBLIC_API_URL` = `https://second-body-api.onrender.com/api` (2번 API URL + `/api`)
    - `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-4. **Settings → Git → Deploy Hooks** 에서 Hook 생성 → URL 복사
-5. 배포 → `https://<project>.vercel.app`
+4. Deploy → `https://<project>.vercel.app`
+5. 이후 main push 마다 Vercel 이 자동 재배포
 
 **주의**
+
 - `EXPO_PUBLIC_*` 값은 **빌드 시 번들에 박힌다.** 값 변경 시 **재배포(재빌드)** 필요.
 - SPA 라우팅: `app.json` 의 `"web": { "output": "single" }` + `vercel.json` rewrite(`/(.*) → /index.html`)로 처리 → 동적 경로 새로고침도 정상.
 - CORS: 현재 API 는 `enableCors()`(전체 허용). 공개 전엔 Vercel 도메인만 허용하도록 좁히는 것을 권장.
@@ -86,28 +87,31 @@ supabase db push                                    # 미적용 마이그레이�
 배포는 **자동이 아니라 수동 버튼**으로만 실행된다.
 
 ### CI — `.github/workflows/ci.yml`
+
 - PR/`main` push에서 **shared 빌드 → API·mobile 타입체크 → API 빌드** (회귀 게이트)
 - 배포는 하지 않음. 브랜치 보호 규칙에서 이 체크를 필수로 걸면 좋다.
 
-### 수동 배포 — `.github/workflows/deploy.yml`
-- GitHub → **Actions → "Deploy (manual)" → Run workflow** 버튼으로 실행
-- `service` 드롭다운에서 `both` / `api` / `web` 선택 → 해당 서비스의 Render Deploy Hook 호출
+### API 수동 배포 — `.github/workflows/deploy.yml`
+
+- GitHub → **Actions → "Deploy API" → Run workflow** 버튼으로 Render(API) 배포
+- 웹은 여기 없음 → **Vercel 이 main push 시 자동 배포**
 
 **필요 시크릿** (레포 Settings → Secrets and variables → Actions):
-- `RENDER_DEPLOY_HOOK_API` — Render API 서비스의 Deploy Hook URL
-- `VERCEL_DEPLOY_HOOK_WEB` — Vercel 프로젝트의 Deploy Hook URL
 
-> Deploy Hook 은 "배포 시작"만 트리거하고 완료를 기다리지 않는다. 완료까지 대기/실패 감지가
-> 필요하면 각 플랫폼 CLI/Action 으로 교체하면 된다.
+- `RENDER_DEPLOY_HOOK_API` — Render API 서비스의 Deploy Hook URL
+
+> Deploy Hook 은 "배포 시작"만 트리거하고 완료를 기다리지 않는다.
+> 완료까지 대기/실패 감지가 필요하면 Render CLI/Action 으로 교체하면 된다.
 
 ---
 
 ## 5. 릴리스 흐름 요약
 
 ```
-feature 브랜치 → PR (CI build 통과) → main 머지
+feature 브랜치 → PR (CI build 통과) → main 머지(push)
    → (스키마 변경 시) DB 마이그레이션 먼저
-   → Actions → "Deploy (manual)" 버튼 → 서비스 선택 → Render 배포
+   → 웹: Vercel 자동 배포
+   → API: Actions → "Deploy API" 버튼 → Render 배포
 ```
 
 ---

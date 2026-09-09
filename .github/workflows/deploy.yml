@@ -1,30 +1,13 @@
-name: Deploy
+name: Deploy API
 
-# GitHub → Actions → "Deploy (manual)" → Run workflow 버튼으로 직접 배포 트리거.
-# 배포할 서비스를 드롭다운에서 선택한다. Render 는 선택된 서비스의 최신 main 을 빌드/배포한다.
+# GitHub → Actions → "Deploy API" → Run workflow 버튼으로 Render(API) 배포 트리거.
+# 웹(Vercel)은 main push 시 자동 배포되므로 여기 없음.
 on:
   workflow_dispatch:
-    inputs:
-      service:
-        description: 배포할 서비스
-        type: choice
-        options:
-          - both
-          - api
-          - web
-        default: both
 
 jobs:
-  deploy:
+  deploy-api:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy API
-        if: ${{ github.event.inputs.service == 'api' || github.event.inputs.service == 'both' }}
+      - name: Deploy API (Render)
         run: curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK_API }}"
-
-      - name: Deploy Web (Vercel)
-        if: ${{ github.event.inputs.service == 'web' || github.event.inputs.service == 'both' }}
-        run: curl -fsSL -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}"
-
-      - name: Summary
-        run: echo "Triggered Render deploy for '${{ github.event.inputs.service }}'."
