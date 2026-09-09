@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react'
+import React, { useRef, useState, useCallback, useEffect } from 'react'
 import {
   View,
   TouchableOpacity,
@@ -6,6 +6,7 @@ import {
   Animated,
   GestureResponderEvent,
   LayoutChangeEvent,
+  Platform,
 } from 'react-native'
 import { Text } from '@/components/Text'
 import { BodyPartCode, Severity } from '@second-body/shared'
@@ -56,10 +57,12 @@ type TouchState =
 
 interface Props {
   severityMap: Partial<Record<BodyPartCode, Severity>>
+  noteMap?: Partial<Record<BodyPartCode, string>>
   onSaveSymptom: (code: BodyPartCode, severity: Severity, note: string) => Promise<void>
+  onResolveSymptom?: (code: BodyPartCode) => Promise<void>
 }
 
-export function BodyMapView({ severityMap, onSaveSymptom }: Props) {
+export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymptom }: Props) {
   const [bodyView, setBodyView] = useState<'front' | 'back'>('front')
   const [selectedCode, setSelectedCode] = useState<BodyPartCode | null>(null)
   const [sheetCode, setSheetCode] = useState<BodyPartCode | null>(null)
@@ -85,6 +88,66 @@ export function BodyMapView({ severityMap, onSaveSymptom }: Props) {
   // ── Touch tracking ────────────────────────────────────────────────────────
   const touch = useRef<TouchState | null>(null)
   const lastTapAt = useRef(0)
+
+  // ── Web: DOM click 폴백 ─────────────────────────────────────────────────────
+  // react-native-web 의 제스처 리스폰더는 터치 에뮬레이션(Chrome device mode)에서
+  // 탭을 놓치는 경우가 있어, 웹에서는 실제 click 이벤트로 직접 히트테스트한다.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const win: any = (globalThis as any).window
+    const node: any = canvasRef.current
+    if (!win || !node?.getBoundingClientRect) return
+
+    let downX = 0
+    let downY = 0
+    let downT = 0
+
+    const onDown = (ev: any) => {
+      downX = ev.clientX
+      downY = ev.clientY
+      downT = Date.now()
+    }
+
+    const onUp = (ev: any) => {
+      if (!node.contains?.(ev.target)) return
+      const dist = Math.hypot(ev.clientX - downX, ev.clientY - downY)
+      if (dist > TAP_MAX_DIST || Date.now() - downT > 500) return
+
+      const rect = node.getBoundingClientRect()
+      const lx = ev.clientX - rect.left
+      const ly = ev.clientY - rect.top
+      const s = scale.current
+      const dispX = SVG_DISPLAY_W / 2 + (lx - rect.width / 2 - txVal.current) / s
+      const dispY = SVG_DISPLAY_H / 2 + (ly - rect.height / 2 - tyVal.current) / s
+      const svgX = (dispX * VIEW_BOX_W) / SVG_DISPLAY_W
+      const svgY = (dispY * VIEW_BOX_H) / SVG_DISPLAY_H
+      const hit = hitTestZones(svgX, svgY, bodyViewRef.current)
+      if (!hit) return
+
+      setSelectedCode(hit)
+      setSheetCode(hit)
+
+      // pointerup 뒤에 따라오는 click 이 방금 뜬 시트 배경(backdrop)에 떨어져
+      // 즉시 닫히는 것을 막기 위해, 다음 click 한 번을 삼킨다.
+      const swallow = (ce: any) => {
+        ce.stopPropagation()
+        ce.preventDefault()
+        win.removeEventListener('click', swallow, true)
+      }
+      win.addEventListener('click', swallow, true)
+      setTimeout(() => win.removeEventListener('click', swallow, true), 700)
+    }
+
+    // capture 단계(true) + window 바인딩: RNW 리스폰더가 전파를 막기 전에 먼저 처리
+    win.addEventListener('pointerdown', onDown, true)
+    win.addEventListener('pointerup', onUp, true)
+    return () => {
+      win.removeEventListener('pointerdown', onDown, true)
+      win.removeEventListener('pointerup', onUp, true)
+    }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+  }, [])
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   /** Convert absolute page coords → canvas-relative coords */
@@ -158,6 +221,9 @@ export function BodyMapView({ severityMap, onSaveSymptom }: Props) {
         touch.current = initPinch(ts, scale.current, txVal.current, tyVal.current)
         return
       }
+
+      // 웹 터치 이벤트에서 touches 가 비어있는 경우 방어 (changedTouches 로만 오는 케이스)
+      if (!ts[0]) return
 
       // Single finger — check for double-tap
       const now = Date.now()
@@ -247,6 +313,9 @@ export function BodyMapView({ severityMap, onSaveSymptom }: Props) {
 
     if (!t || t.mode !== 'single' || t.moved) return
 
+    // 웹은 DOM click 폴백이 탭을 처리하므로 여기서는 히트테스트하지 않음 (중복 방지)
+    if (Platform.OS === 'web') return
+
     // Tap — convert canvas coords to SVG viewBox coords
     // Canvas coord of touch:
     const lx = t.startCanvasX
@@ -298,6 +367,13 @@ export function BodyMapView({ severityMap, onSaveSymptom }: Props) {
     [sheetCode, onSaveSymptom],
   )
 
+  const handleResolve = useCallback(async () => {
+    if (!sheetCode || !onResolveSymptom) return
+    await onResolveSymptom(sheetCode)
+    setSheetCode(null)
+    setSelectedCode(null)
+  }, [sheetCode, onResolveSymptom])
+
   return (
     <View style={styles.root}>
       {/* Front / Back toggle */}
@@ -321,7 +397,8 @@ export function BodyMapView({ severityMap, onSaveSymptom }: Props) {
       {/* Touch canvas */}
       <View
         ref={canvasRef}
-        style={styles.canvas}
+        // 웹: 브라우저가 터치를 스크롤/줌으로 가로채지 않도록 (device mode 탭 문제 해결)
+        style={[styles.canvas, Platform.OS === 'web' && ({ touchAction: 'none' } as object)]}
         onLayout={onContainerLayout}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
@@ -354,7 +431,10 @@ export function BodyMapView({ severityMap, onSaveSymptom }: Props) {
         visible={sheetCode !== null}
         partCode={sheetCode}
         initialSeverity={sheetCode ? severityMap[sheetCode] : undefined}
+        initialNote={sheetCode ? noteMap?.[sheetCode] : undefined}
+        canResolve={sheetCode ? severityMap[sheetCode] !== undefined : false}
         onSave={handleSave}
+        onResolve={onResolveSymptom ? handleResolve : undefined}
         onClose={handleClose}
       />
     </View>

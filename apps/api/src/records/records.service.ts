@@ -56,9 +56,16 @@ export class RecordsService {
   }
 
   async update(id: string, userId: string, dto: UpdateRecordDto): Promise<SymptomRecord> {
+    // 클라이언트의 resolved(boolean)를 저장 컬럼 resolved_at(timestamp)로 매핑
+    const { resolved, ...rest } = dto
+    const payload: Record<string, unknown> = { ...rest }
+    if (resolved !== undefined) {
+      payload.resolved_at = resolved ? new Date().toISOString() : null
+    }
+
     const { error } = await this.supabase.client
       .from('symptom_records')
-      .update(dto)
+      .update(payload)
       .eq('id', id)
       .eq('user_id', userId)
 

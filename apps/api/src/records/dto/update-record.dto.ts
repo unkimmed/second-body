@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsIn, IsOptional, Min, Max } from 'class-validator'
+import { IsString, IsInt, IsIn, IsOptional, IsBoolean, Min, Max } from 'class-validator'
 import {
   BODY_PART_CODES,
   BodyPartCode,
@@ -20,4 +20,8 @@ export class UpdateRecordDto implements IUpdateSymptomRecordDto {
   @IsOptional()
   @IsString()
   note?: string
+
+  @IsOptional()
+  @IsBoolean()
+  resolved?: boolean
 }

@@ -148,6 +148,7 @@ CREATE TABLE public.symptom_records (
   body_part_code TEXT        NOT NULL REFERENCES public.body_parts(code),
   severity       SMALLINT    NOT NULL CHECK (severity BETWEEN 1 AND 5),
   note           TEXT,
+  resolved_at    TIMESTAMPTZ,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -158,6 +159,11 @@ CREATE INDEX idx_symptom_records_user_date
 
 CREATE INDEX idx_symptom_records_body_part
   ON public.symptom_records (body_part_code);
+
+-- 홈 바디맵: 미해결(진행중) 증상만 조회
+CREATE INDEX idx_symptom_records_unresolved
+  ON public.symptom_records (user_id)
+  WHERE resolved_at IS NULL;
 
 
 -- ============================================================

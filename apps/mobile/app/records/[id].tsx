@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { BodyPartCode, Severity, SymptomRecord } from '@second-body/shared'
 import { SEVERITY_COLOR } from '@/constants/symptom'
 import { useAuth } from '@/lib/AuthContext'
-import { fetchRecord, deleteRecord, patchRecord } from '../api/records'
+import { fetchRecord, deleteRecord, patchRecord, resolveRecord } from '../api/records'
 import { RecordDetailCard } from '@/components/RecordDetailCard'
 import { RecordEditForm } from '@/components/RecordEditForm'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
@@ -35,6 +35,7 @@ export default function RecordDetailScreen() {
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [resolving, setResolving] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -75,6 +76,21 @@ export default function RecordDetailScreen() {
       setErrorMessage(`저장 실패: ${msg}`)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function toggleResolve() {
+    if (!userId || !record) return
+    setErrorMessage(null)
+    setResolving(true)
+    try {
+      const updated = await resolveRecord(id, userId, !record.resolved_at)
+      setRecord(updated)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setErrorMessage(`처리 실패: ${msg}`)
+    } finally {
+      setResolving(false)
     }
   }
 
@@ -119,8 +135,15 @@ export default function RecordDetailScreen() {
 
   return (
     <ScrollView className="flex-1 bg-surface-lowest">
-      <View className={`px-5 py-4`}>
+      <View className={`px-5 py-4 flex-row items-center gap-2`}>
         <Text className="text-sm font-medium">{formatDate(record.record_date)}</Text>
+        {record.resolved_at && (
+          <View className="bg-primary/10 border border-primary rounded-full px-2 py-0.5">
+            <Text className="text-primary text-[11px] font-semibold">
+              해결됨 · {record.resolved_at.slice(0, 10)}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View className="px-5 gap-4 mt-4">
@@ -145,6 +168,30 @@ export default function RecordDetailScreen() {
           <View className="bg-red-50 border border-red-200 rounded-xl p-3">
             <Text className="text-danger text-xs">{errorMessage}</Text>
           </View>
+        )}
+
+        {!isEditing && (
+          <TouchableOpacity
+            onPress={toggleResolve}
+            disabled={resolving}
+            className={`py-3 rounded-md items-center ${
+              record.resolved_at
+                ? 'border border-outline-variant'
+                : 'bg-primary'
+            } ${resolving ? 'opacity-50' : ''}`}
+          >
+            <Text
+              className={`text-sm font-semibold ${
+                record.resolved_at ? 'text-on-surface-variant' : 'text-surface'
+              }`}
+            >
+              {resolving
+                ? '처리 중...'
+                : record.resolved_at
+                  ? '진행중으로 되돌리기'
+                  : '✓ 해결 처리'}
+            </Text>
+          </TouchableOpacity>
         )}
 
         <View className="flex-row gap-2 w-full">

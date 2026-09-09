@@ -109,6 +109,8 @@ export interface SymptomRecord {
   body_part_code: BodyPartCode
   severity: Severity
   note?: string
+  /** 해결 처리된 시각(ISO). null/undefined 이면 진행중(미해결) */
+  resolved_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -124,4 +126,6 @@ export interface UpdateSymptomRecordDto {
   body_part_code?: BodyPartCode
   severity?: Severity
   note?: string
+  /** true → 해결 처리(resolved_at = now), false → 다시 진행중(resolved_at = null) */
+  resolved?: boolean
 }

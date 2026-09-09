@@ -1,6 +1,5 @@
 import { CreateSymptomRecordDto, UpdateSymptomRecordDto, SymptomRecord } from '@second-body/shared'
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+import { API_URL } from '@/lib/config'
 
 function authHeaders(userId: string) {
   return { 'x-user-id': userId }
@@ -42,6 +41,14 @@ export async function patchRecord(
     body: JSON.stringify(payload),
   })
   return res.json() as Promise<SymptomRecord>
+}
+
+export async function resolveRecord(
+  id: string,
+  userId: string,
+  resolved: boolean,
+): Promise<SymptomRecord> {
+  return patchRecord(id, userId, { resolved })
 }
 
 export async function deleteRecord(id: string, userId: string): Promise<Response> {

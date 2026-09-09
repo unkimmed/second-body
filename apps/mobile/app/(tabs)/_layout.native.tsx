@@ -5,7 +5,13 @@ import {
   TabActions,
   TabRouter,
 } from '@react-navigation/native'
+import Constants from 'expo-constants'
 import TabView from 'react-native-bottom-tabs'
+import { JsTabLayout } from '@/components/JsTabNavigator'
+
+// Expo Go 에는 react-native-bottom-tabs 의 네이티브 모듈(RNCTabView)이 없어
+// dev build 가 아닐 때(Expo Go)는 JS 탭바로 폴백한다.
+const isExpoGo = Constants.executionEnvironment === 'storeClient'
 
 const CENTER_TAB = 'records/new'
 const HOME_TAB = 'index'
@@ -85,6 +91,9 @@ const { Navigator } = createNativeBottomTabs()
 const Tabs = withLayoutContext(Navigator)
 
 export default function TabLayout() {
+  // Expo Go: 네이티브 탭 모듈이 없으므로 JS 탭바로 폴백
+  if (isExpoGo) return <JsTabLayout />
+
   return (
     <Tabs initialRouteName="index">
       <Tabs.Screen name="index" options={{ title: '' }} />
