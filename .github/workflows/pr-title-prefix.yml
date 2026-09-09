@@ -1,0 +1,43 @@
+name: PR Title Prefix
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  add-prefix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepend branch name to PR title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+            const title = pr.title;
+
+            // 브랜치명에서 티켓 키만 추출 (예: MOM-16-add-login → MOM-16)
+            const match = branch.match(/[A-Z]+-\d+/);
+            if (!match) {
+              core.info(`No ticket key found in branch "${branch}", skipping.`);
+              return;
+            }
+            const prefix = `[${match[0]}]`;
+
+            // 이미 [티켓키]로 시작하면 중복 방지
+            if (title.startsWith(prefix)) {
+              core.info(`Title already prefixed: "${title}"`);
+              return;
+            }
+
+            const newTitle = `${prefix} ${title}`;
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              title: newTitle,
+            });
+            core.info(`Updated title: "${newTitle}"`);
