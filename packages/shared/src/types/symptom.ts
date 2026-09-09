@@ -64,6 +64,26 @@ export const BODY_PART_GROUP_CODES = [
 export type BodyPartCode = (typeof BODY_PART_CODES)[number]
 export type BodyPartGroupCode = (typeof BODY_PART_GROUP_CODES)[number]
 
+// L2 부위 그룹 → 하위 세부 부위(L3) 매핑. 부위 선택 UI에서 2단계 선택에 사용.
+export const BODY_PART_GROUP_CHILDREN: Record<
+  Exclude<BodyPartGroupCode, 'body'>,
+  readonly BodyPartCode[]
+> = {
+  head_neck: ['head', 'left_eye', 'right_eye', 'nose', 'mouth', 'left_ear', 'right_ear', 'skin_face', 'neck'],
+  left_arm: ['left_shoulder', 'left_upper_arm', 'left_elbow', 'left_forearm', 'left_wrist', 'left_hand'],
+  right_arm: ['right_shoulder', 'right_upper_arm', 'right_elbow', 'right_forearm', 'right_wrist', 'right_hand'],
+  torso: ['chest', 'abdomen', 'back', 'lower_back', 'pelvis', 'hip', 'genitalia'],
+  left_leg: ['left_thigh', 'left_knee', 'left_calf', 'left_ankle', 'left_foot'],
+  right_leg: ['right_thigh', 'right_knee', 'right_calf', 'right_ankle', 'right_foot'],
+}
+
+// L3 코드 → 소속 L2 그룹 역매핑
+export const BODY_PART_TO_GROUP = Object.fromEntries(
+  Object.entries(BODY_PART_GROUP_CHILDREN).flatMap(([group, codes]) =>
+    codes.map((code) => [code, group as Exclude<BodyPartGroupCode, 'body'>]),
+  ),
+) as Record<BodyPartCode, Exclude<BodyPartGroupCode, 'body'>>
+
 // body_parts 마스터 테이블 전체 (L1+L2+L3 = 44개)
 export type AnyBodyPartCode = BodyPartCode | BodyPartGroupCode
 

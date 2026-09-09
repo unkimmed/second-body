@@ -1,10 +1,12 @@
 import { View, TextInput, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/components/Text'
-import { useRouter } from 'expo-router'
-import { useState } from 'react'
-import { BODY_PART_CODES, BodyPartCode, Severity } from '@second-body/shared'
-import { BODY_PART_LABELS, SEVERITY_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
+import { useRouter, useFocusEffect } from 'expo-router'
+import { useCallback, useState } from 'react'
+import { BodyPartCode, Severity } from '@second-body/shared'
+import { SEVERITY_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
+import { BodyPartSelector } from '@/components/BodyPartSelector'
+import { DateField } from '@/components/DateField'
 import { useAuth } from '@/lib/AuthContext'
 import { createRecord } from '@/app/api/records'
 
@@ -12,16 +14,31 @@ export default function NewRecordScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { userId } = useAuth()
-  const [recordDate, setRecordDate] = useState(new Date().toISOString().split('T')[0])
+  const [recordDate, setRecordDate] = useState(new Date().toLocaleDateString('en-CA'))
   const [bodyPartCode, setBodyPartCode] = useState<BodyPartCode | null>(null)
   const [severity, setSeverity] = useState<Severity>(3)
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  useFocusEffect(
+    useCallback(() => {
+      setRecordDate(new Date().toLocaleDateString('en-CA'))
+      setBodyPartCode(null)
+      setSeverity(3)
+      setNote('')
+      setErrorMessage(null)
+      setSubmitting(false)
+    }, []),
+  )
+
   async function handleSubmit() {
     setErrorMessage(null)
 
+    if (!recordDate) {
+      setErrorMessage('날짜를 선택해주세요.')
+      return
+    }
     if (!bodyPartCode) {
       setErrorMessage('신체 부위를 선택해주세요.')
       return
@@ -71,45 +88,19 @@ export default function NewRecordScreen() {
       {/* 날짜 */}
       <View>
         <Text className="text-sm font-medium text-on-surface-variant mb-1">날짜</Text>
-        <TextInput
-          className="border border-outline-variant rounded-xl px-4 py-3 text-base bg-surface-low"
-          value={recordDate}
-          onChangeText={setRecordDate}
-          placeholder="YYYY-MM-DD"
-        />
+        <DateField value={recordDate} onChange={setRecordDate} />
       </View>
 
       {/* 신체 부위 선택 */}
       <View>
         <Text className="text-sm font-medium text-on-surface-variant mb-2">신체 부위</Text>
-        <View className="flex-row flex-wrap gap-2">
-          {BODY_PART_CODES.map((code) => {
-            const isSelected = bodyPartCode === code
-            return (
-              <TouchableOpacity
-                key={code}
-                onPress={() => setBodyPartCode(isSelected ? null : code)}
-                className={`px-3 py-1.5 rounded-full border ${
-                  isSelected
-                    ? 'bg-primary border-primary'
-                    : 'bg-surface-lowest border-outline-variant'
-                }`}
-              >
-                <Text
-                  className={`text-xs ${isSelected ? 'text-surface font-medium' : 'text-on-surface-variant'}`}
-                >
-                  {BODY_PART_LABELS[code]}
-                </Text>
-              </TouchableOpacity>
-            )
-          })}
-        </View>
+        <BodyPartSelector value={bodyPartCode} onChange={setBodyPartCode} />
       </View>
 
       {/* 심각도 */}
       <View>
         <Text className="text-sm font-medium text-on-surface-variant mb-2">
-          심각도: <Text className="text-primary">{SEVERITY_LABELS[severity]}</Text>
+          심각도 : <Text className="text-primary">{SEVERITY_LABELS[severity]}</Text>
         </Text>
         <View className="flex-row gap-2">
           {([1, 2, 3, 4, 5] as Severity[]).map((s) => (
@@ -141,7 +132,7 @@ export default function NewRecordScreen() {
           className="border border-outline-variant rounded-xl px-4 py-3 text-base bg-surface-low"
           value={note}
           onChangeText={setNote}
-          placeholder="예: 아침부터 욱신거림"
+          placeholder="ex) 아침부터 욱신거림"
           multiline
           numberOfLines={3}
           textAlignVertical="top"
