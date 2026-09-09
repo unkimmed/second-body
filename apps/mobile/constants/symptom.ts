@@ -1,13 +1,15 @@
 import { BodyPartCode, BodyPartGroupCode, Severity } from '@second-body/shared'
 
-// 실제 증상 기록에 사용되는 부위 (L3, 37개)
+// 실제 증상 기록에 사용되는 부위 (L3, 39개)
 export const BODY_PART_LABELS: Record<BodyPartCode, string> = {
   // 머리·목
   head: '머리',
-  eye: '눈',
+  left_eye: '왼쪽 눈',
+  right_eye: '오른쪽 눈',
   nose: '코',
   mouth: '입',
-  ear: '귀',
+  left_ear: '왼쪽 귀',
+  right_ear: '오른쪽 귀',
   skin_face: '피부',
   neck: '목',
   // 왼쪽 팔

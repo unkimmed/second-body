@@ -15,8 +15,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- gen_random_uuid()
 -- 1. BODY_PARTS (신체 부위 마스터) v4
 -- L1 :  1개 (전신)
 -- L2 :  6개 (부위 그룹)
--- L3 : 37개 (증상 기록 단위)
--- 전체: 44개
+-- L3 : 39개 (증상 기록 단위)
+-- 전체: 46개
 -- ============================================================
 
 CREATE TABLE public.body_parts (
@@ -47,17 +47,19 @@ INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path
   ('left_leg',   '왼쪽 다리',   2, 'body', 'left',   'svg-left-leg',   5),
   ('right_leg',  '오른쪽 다리', 2, 'body', 'right',  'svg-right-leg',  6);
 
--- L3 — 세부 부위 (37개)
+-- L3 — 세부 부위 (39개)
 
--- 머리·목 (7)
+-- 머리·목 (9)
 INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES
-  ('head',      '머리', 3, 'head_neck', 'center', 'svg-head',  1),
-  ('eye',       '눈',   3, 'head_neck', 'center', 'svg-eye',   2),
-  ('nose',      '코',   3, 'head_neck', 'center', 'svg-nose',  3),
-  ('mouth',     '입',   3, 'head_neck', 'center', 'svg-mouth', 4),
-  ('ear',       '귀',   3, 'head_neck', 'center', 'svg-ear',   5),
-  ('skin_face', '피부', 3, 'head_neck', 'center', 'svg-skin',  6),
-  ('neck',      '목',   3, 'head_neck', 'center', 'svg-neck',  7);
+  ('head',       '머리',     3, 'head_neck', 'center', 'svg-head',    1),
+  ('left_eye',   '왼쪽 눈',  3, 'head_neck', 'left',   'svg-l-eye',   2),
+  ('right_eye',  '오른쪽 눈', 3, 'head_neck', 'right',  'svg-r-eye',   3),
+  ('nose',       '코',       3, 'head_neck', 'center', 'svg-nose',    4),
+  ('mouth',      '입',       3, 'head_neck', 'center', 'svg-mouth',   5),
+  ('left_ear',   '왼쪽 귀',  3, 'head_neck', 'left',   'svg-l-ear',   6),
+  ('right_ear',  '오른쪽 귀', 3, 'head_neck', 'right',  'svg-r-ear',   7),
+  ('skin_face',  '피부',     3, 'head_neck', 'center', 'svg-skin',    8),
+  ('neck',       '목',       3, 'head_neck', 'center', 'svg-neck',    9);
 
 -- 왼쪽 팔 (6)
 INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path_id, display_order) VALUES

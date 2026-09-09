@@ -1,13 +1,15 @@
 export type AvatarGender = 'male' | 'female'
 
-// 증상을 실제로 기록할 수 있는 부위 (L3, 37개)
+// 증상을 실제로 기록할 수 있는 부위 (L3, 39개)
 export const BODY_PART_CODES = [
   // 머리·목
   'head',
-  'eye',
+  'left_eye',
+  'right_eye',
   'nose',
   'mouth',
-  'ear',
+  'left_ear',
+  'right_ear',
   'skin_face',
   'neck',
   // 왼쪽 팔
