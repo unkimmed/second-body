@@ -1,0 +1,25 @@
+# Render Blueprint — 배포 구성을 코드로 관리
+# https://render.com/docs/blueprint-spec
+#
+# 사용법: Render 대시보드 → New → Blueprint → 이 레포 연결 → API 서비스 생성
+# sync:false 로 표시된 시크릿은 대시보드에서 값을 직접 입력해야 함(레포에 커밋 금지).
+#
+# 프론트(Expo Web)는 Render 가 아니라 Vercel 로 배포한다 → vercel.json 참고.
+
+services:
+  # ── NestJS API (상주형 web service) ────────────────────────────────
+  - type: web
+    name: second-body-api
+    runtime: node
+    plan: free # 무료 티어(15분 미사용 시 슬립 → 첫 요청 콜드스타트). 상시 가동은 유료로.
+    rootDir: .
+    # shared 패키지를 먼저 빌드한 뒤 api 빌드
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm shared:build && pnpm api:build
+    startCommand: node apps/api/dist/main.js
+    autoDeploy: false # 배포는 GitHub Actions 수동 워크플로(deploy.yml)가 Deploy Hook 으로 트리거
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # PORT 는 Render 가 자동 주입 → 코드에서 process.env.PORT 사용 중
