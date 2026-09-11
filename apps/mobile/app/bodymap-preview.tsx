@@ -72,7 +72,7 @@ export default function BodyMapPreview() {
     (g: BodyGroupCode) => {
       levelRef.current = g
       setLevel(g)
-      animateTo(fitAspect(groupViewRect(g)))
+      animateTo(fitAspect(groupViewRect(g, 'front')))
     },
     [animateTo],
   )

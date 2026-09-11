@@ -6,7 +6,13 @@ import { BODY_PART_GROUP_LABELS } from '@/constants/symptom'
 import { Colors } from '@/constants/theme'
 import { BodyFigureFigma } from './BodyFigureFigma'
 import { SymptomSheet } from './SymptomSheet'
-import { FULL_RECT, DISPLAY_ASPECT_HW, groupViewRect, BodyGroupCode } from './bodyMapFigma'
+import {
+  FULL_RECT,
+  DISPLAY_ASPECT_HW,
+  groupViewRect,
+  BodyGroupCode,
+  BodyView,
+} from './bodyMapFigma'
 
 type Rect = { x: number; y: number; w: number; h: number }
 
@@ -37,11 +43,13 @@ interface Props {
 
 export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymptom }: Props) {
   const [level, setLevel] = useState<'full' | BodyGroupCode>('full')
+  const [view, setView] = useState<BodyView>('front')
   const [viewBox, setViewBox] = useState(rectToViewBox(FULL_RECT))
   const [sheetCode, setSheetCode] = useState<BodyPartCode | null>(null)
   const [box, setBox] = useState({ w: 0, h: 0 })
 
   const levelRef = useRef<'full' | BodyGroupCode>('full')
+  const viewRef = useRef<BodyView>('front')
   const curRect = useRef<Rect>(FULL_RECT)
   const progress = useRef(new Animated.Value(1)).current
   const pinchStart = useRef<number | null>(null)
@@ -74,7 +82,7 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
     (g: BodyGroupCode) => {
       levelRef.current = g
       setLevel(g)
-      animateTo(fitAspect(groupViewRect(g)))
+      animateTo(fitAspect(groupViewRect(g, viewRef.current)))
     },
     [animateTo],
   )
@@ -85,6 +93,17 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
     setLevel('full')
     animateTo(FULL_RECT)
   }, [animateTo])
+
+  const switchView = useCallback(
+    (v: BodyView) => {
+      if (viewRef.current === v) return
+      viewRef.current = v
+      setView(v)
+      setSheetCode(null)
+      zoomToFull()
+    },
+    [zoomToFull],
+  )
 
   // ── Part tap: L0 → 그룹 줌인, L1 → 증상 시트 ────────────────────────────────
   const handlePartTap = useCallback(
@@ -134,7 +153,20 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
             <Text style={styles.groupLabel}>{BODY_PART_GROUP_LABELS[level]}</Text>
           </>
         ) : (
-          <Text style={styles.hint}>부위를 탭하면 확대됩니다</Text>
+          <View style={styles.toggleRow}>
+            {(['front', 'back'] as BodyView[]).map((v) => (
+              <TouchableOpacity
+                key={v}
+                onPress={() => switchView(v)}
+                style={[styles.toggleBtn, view === v && styles.toggleActive]}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.toggleText, view === v && styles.toggleTextActive]}>
+                  {v === 'front' ? '앞면' : '뒷면'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
       </View>
 
@@ -168,6 +200,7 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
           <BodyFigureFigma
             width={figW}
             viewBox={viewBox}
+            view={view}
             severityMap={severityMap}
             selectedCode={sheetCode}
             onSelect={handlePartTap}
@@ -219,10 +252,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.onSurface,
   },
-  hint: {
-    fontSize: 12,
+  toggleRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  toggleBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    backgroundColor: Colors.surfaceContainerHigh,
+  },
+  toggleActive: {
+    backgroundColor: Colors.primary,
+  },
+  toggleText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.onSurfaceVariant,
-    opacity: 0.7,
+  },
+  toggleTextActive: {
+    color: Colors.surface,
   },
   canvas: {
     flex: 1,
