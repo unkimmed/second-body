@@ -4,6 +4,8 @@ export type BodyGroupCode = Exclude<BodyPartGroupCode, 'body'>
 
 // 전체뷰 viewBox 사각형 (FIGMA_VIEW_BOX 파싱)
 export const FULL_RECT = { x: 230, y: 100, w: 545, h: 1050 }
+// 표시 박스 세로/가로 비율 (전체뷰 기준 고정)
+export const DISPLAY_ASPECT_HW = FULL_RECT.h / FULL_RECT.w
 // flip 축(x=502.5) 기준 미러 → 표시좌표 = 1005 - 원본x
 const FLIP_X2 = 1005
 

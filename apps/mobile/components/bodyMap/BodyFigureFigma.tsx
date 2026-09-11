@@ -99,10 +99,7 @@ export function BodyFigureFigma({
               cx={p.anchor.cx}
               cy={p.anchor.cy}
               r={Math.max(p.anchor.r, 12)}
-              // 웹: 영역 확인용 옅은 표시 + 커서 포인터
-              fill={IS_WEB ? 'rgba(69,99,115,0.05)' : 'transparent'}
-              stroke={IS_WEB ? 'rgba(69,99,115,0.3)' : undefined}
-              strokeWidth={IS_WEB ? 0.6 : 0}
+              fill="transparent"
               onPress={() => onSelect(code)}
               {...WEB_CURSOR}
             />

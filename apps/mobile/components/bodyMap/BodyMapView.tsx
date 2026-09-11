@@ -1,59 +1,32 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react'
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  GestureResponderEvent,
-  LayoutChangeEvent,
-  Platform,
-} from 'react-native'
+import { useCallback, useRef, useState } from 'react'
+import { View, TouchableOpacity, StyleSheet, Animated, LayoutChangeEvent } from 'react-native'
 import { Text } from '@/components/Text'
-import { BodyPartCode, Severity } from '@second-body/shared'
-import { SVG_DISPLAY_W, SVG_DISPLAY_H, VIEW_BOX_W, VIEW_BOX_H, hitTestZones } from './bodyPartZones'
-import { BodyFigureSvg } from './BodyFigureSvg'
-import { SymptomSheet } from './SymptomSheet'
+import { BodyPartCode, Severity, BODY_PART_TO_GROUP } from '@second-body/shared'
+import { BODY_PART_GROUP_LABELS } from '@/constants/symptom'
 import { Colors } from '@/constants/theme'
+import { BodyFigureFigma } from './BodyFigureFigma'
+import { SymptomSheet } from './SymptomSheet'
+import { FULL_RECT, DISPLAY_ASPECT_HW, groupViewRect, BodyGroupCode } from './bodyMapFigma'
 
-const MIN_SCALE = 0.6
-const MAX_SCALE = 6
-const SPRING_CFG = { useNativeDriver: false, damping: 18, stiffness: 180, mass: 0.6 }
-const TAP_MAX_DIST = 10 // px — max travel to still count as a tap
+type Rect = { x: number; y: number; w: number; h: number }
 
-// ── Distance between two touches in PAGE coordinates ─────────────────────────
-function pageDist(a: { pageX: number; pageY: number }, b: { pageX: number; pageY: number }) {
-  return Math.sqrt((b.pageX - a.pageX) ** 2 + (b.pageY - a.pageY) ** 2)
+const rectToViewBox = (r: Rect) => `${r.x} ${r.y} ${r.w} ${r.h}`
+const DISPLAY_ASPECT_WH = FULL_RECT.w / FULL_RECT.h
+
+/** 그룹 rect 를 표시 박스 비율에 맞춰 확장 (레터박스 방지) */
+function fitAspect(r: Rect): Rect {
+  let { x, y, w, h } = r
+  if (w / h < DISPLAY_ASPECT_WH) {
+    const nw = h * DISPLAY_ASPECT_WH
+    x -= (nw - w) / 2
+    w = nw
+  } else {
+    const nh = w / DISPLAY_ASPECT_WH
+    y -= (nh - h) / 2
+    h = nh
+  }
+  return { x, y, w, h }
 }
-
-// ── Touch state ───────────────────────────────────────────────────────────────
-type TouchState =
-  | {
-      mode: 'single'
-      // page coords at start (used for delta calc — invariant to reference frame)
-      startPageX: number
-      startPageY: number
-      // canvas coords at start (used for tap hit-test)
-      startCanvasX: number
-      startCanvasY: number
-      savedTx: number
-      savedTy: number
-      moved: boolean
-    }
-  | {
-      mode: 'pinch'
-      startDist: number
-      // Pinch midpoint in CANVAS coords (relative to canvas top-left)
-      startMidX: number
-      startMidY: number
-      // SVG focal point in SVG-display-centered coords (invariant throughout pinch)
-      fpX: number
-      fpY: number
-      savedScale: number
-      savedTx: number
-      savedTy: number
-    }
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {
   severityMap: Partial<Record<BodyPartCode, Severity>>
@@ -63,369 +36,144 @@ interface Props {
 }
 
 export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymptom }: Props) {
-  const [bodyView, setBodyView] = useState<'front' | 'back'>('front')
-  const [selectedCode, setSelectedCode] = useState<BodyPartCode | null>(null)
+  const [level, setLevel] = useState<'full' | BodyGroupCode>('full')
+  const [viewBox, setViewBox] = useState(rectToViewBox(FULL_RECT))
   const [sheetCode, setSheetCode] = useState<BodyPartCode | null>(null)
-  const bodyViewRef = useRef<'front' | 'back'>('front')
+  const [box, setBox] = useState({ w: 0, h: 0 })
 
-  // ── Animated values (JS-thread, updated via setValue every gesture frame) ──
-  const scaleAnim = useRef(new Animated.Value(1)).current
-  const txAnim = useRef(new Animated.Value(0)).current
-  const tyAnim = useRef(new Animated.Value(0)).current
+  const levelRef = useRef<'full' | BodyGroupCode>('full')
+  const curRect = useRef<Rect>(FULL_RECT)
+  const progress = useRef(new Animated.Value(1)).current
+  const pinchStart = useRef<number | null>(null)
 
-  // ── Current transform state (plain refs for synchronous gesture math) ───────
-  const scale = useRef(1)
-  const txVal = useRef(0)
-  const tyVal = useRef(0)
-
-  // ── Canvas screen position (updated after layout via measure) ────────────────
-  const canvasRef = useRef<View>(null)
-  const canvasPageX = useRef(0)
-  const canvasPageY = useRef(0)
-  const cW = useRef(0)
-  const cH = useRef(0)
-
-  // ── Touch tracking ────────────────────────────────────────────────────────
-  const touch = useRef<TouchState | null>(null)
-  const lastTapAt = useRef(0)
-
-  // ── Web: DOM click 폴백 ─────────────────────────────────────────────────────
-  // react-native-web 의 제스처 리스폰더는 터치 에뮬레이션(Chrome device mode)에서
-  // 탭을 놓치는 경우가 있어, 웹에서는 실제 click 이벤트로 직접 히트테스트한다.
-  useEffect(() => {
-    if (Platform.OS !== 'web') return
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const win: any = (globalThis as any).window
-    const node: any = canvasRef.current
-    if (!win || !node?.getBoundingClientRect) return
-
-    let downX = 0
-    let downY = 0
-    let downT = 0
-
-    const onDown = (ev: any) => {
-      downX = ev.clientX
-      downY = ev.clientY
-      downT = Date.now()
-    }
-
-    const onUp = (ev: any) => {
-      if (!node.contains?.(ev.target)) return
-      const dist = Math.hypot(ev.clientX - downX, ev.clientY - downY)
-      if (dist > TAP_MAX_DIST || Date.now() - downT > 500) return
-
-      const rect = node.getBoundingClientRect()
-      const lx = ev.clientX - rect.left
-      const ly = ev.clientY - rect.top
-      const s = scale.current
-      const dispX = SVG_DISPLAY_W / 2 + (lx - rect.width / 2 - txVal.current) / s
-      const dispY = SVG_DISPLAY_H / 2 + (ly - rect.height / 2 - tyVal.current) / s
-      const svgX = (dispX * VIEW_BOX_W) / SVG_DISPLAY_W
-      const svgY = (dispY * VIEW_BOX_H) / SVG_DISPLAY_H
-      const hit = hitTestZones(svgX, svgY, bodyViewRef.current)
-      if (!hit) return
-
-      setSelectedCode(hit)
-      setSheetCode(hit)
-
-      // pointerup 뒤에 따라오는 click 이 방금 뜬 시트 배경(backdrop)에 떨어져
-      // 즉시 닫히는 것을 막기 위해, 다음 click 한 번을 삼킨다.
-      const swallow = (ce: any) => {
-        ce.stopPropagation()
-        ce.preventDefault()
-        win.removeEventListener('click', swallow, true)
-      }
-      win.addEventListener('click', swallow, true)
-      setTimeout(() => win.removeEventListener('click', swallow, true), 700)
-    }
-
-    // capture 단계(true) + window 바인딩: RNW 리스폰더가 전파를 막기 전에 먼저 처리
-    win.addEventListener('pointerdown', onDown, true)
-    win.addEventListener('pointerup', onUp, true)
-    return () => {
-      win.removeEventListener('pointerdown', onDown, true)
-      win.removeEventListener('pointerup', onUp, true)
-    }
-    /* eslint-enable @typescript-eslint/no-explicit-any */
-  }, [])
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  /** Convert absolute page coords → canvas-relative coords */
-  const toCanvas = useCallback(
-    (pageX: number, pageY: number) => ({
-      x: pageX - canvasPageX.current,
-      y: pageY - canvasPageY.current,
-    }),
-    [],
+  // ── Zoom animation (viewBox 보간) ──────────────────────────────────────────
+  const animateTo = useCallback(
+    (target: Rect) => {
+      const from = curRect.current
+      progress.stopAnimation()
+      progress.setValue(0)
+      const id = progress.addListener(({ value }) => {
+        const r: Rect = {
+          x: from.x + (target.x - from.x) * value,
+          y: from.y + (target.y - from.y) * value,
+          w: from.w + (target.w - from.w) * value,
+          h: from.h + (target.h - from.h) * value,
+        }
+        curRect.current = r
+        setViewBox(rectToViewBox(r))
+      })
+      Animated.timing(progress, { toValue: 1, duration: 280, useNativeDriver: false }).start(() => {
+        progress.removeListener(id)
+        curRect.current = target
+      })
+    },
+    [progress],
   )
 
-  const stopAnims = useCallback(() => {
-    scaleAnim.stopAnimation()
-    txAnim.stopAnimation()
-    tyAnim.stopAnimation()
-  }, [scaleAnim, txAnim, tyAnim])
+  const zoomToGroup = useCallback(
+    (g: BodyGroupCode) => {
+      levelRef.current = g
+      setLevel(g)
+      animateTo(fitAspect(groupViewRect(g)))
+    },
+    [animateTo],
+  )
 
-  const resetView = useCallback(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 1, ...SPRING_CFG }),
-      Animated.spring(txAnim, { toValue: 0, ...SPRING_CFG }),
-      Animated.spring(tyAnim, { toValue: 0, ...SPRING_CFG }),
-    ]).start(() => {
-      scale.current = 1
-      txVal.current = 0
-      tyVal.current = 0
-    })
-  }, [scaleAnim, txAnim, tyAnim])
+  const zoomToFull = useCallback(() => {
+    if (levelRef.current === 'full') return
+    levelRef.current = 'full'
+    setLevel('full')
+    animateTo(FULL_RECT)
+  }, [animateTo])
 
-  /** Build pinch state for the given two touch points */
-  const initPinch = useCallback(
-    (
-      ts: { pageX: number; pageY: number }[],
-      savedScale: number,
-      savedTx: number,
-      savedTy: number,
-    ): Extract<TouchState, { mode: 'pinch' }> => {
-      const dist = pageDist(ts[0], ts[1])
-      const midPage = { x: (ts[0].pageX + ts[1].pageX) / 2, y: (ts[0].pageY + ts[1].pageY) / 2 }
-      const mid = toCanvas(midPage.x, midPage.y)
-
-      // Focal point in SVG-display-centred coords
-      // This is the SVG point currently under the pinch midpoint — kept fixed throughout.
-      const fx = mid.x - cW.current / 2 // midpoint relative to canvas centre
-      const fy = mid.y - cH.current / 2
-      const fpX = (fx - savedTx) / savedScale // into SVG-centred space
-      const fpY = (fy - savedTy) / savedScale
-
-      return {
-        mode: 'pinch',
-        startDist: dist,
-        startMidX: mid.x,
-        startMidY: mid.y,
-        fpX,
-        fpY,
-        savedScale,
-        savedTx,
-        savedTy,
+  // ── Part tap: L0 → 그룹 줌인, L1 → 증상 시트 ────────────────────────────────
+  const handlePartTap = useCallback(
+    (code: BodyPartCode) => {
+      if (levelRef.current === 'full') {
+        zoomToGroup(BODY_PART_TO_GROUP[code])
+      } else {
+        setSheetCode(code)
       }
     },
-    [toCanvas],
+    [zoomToGroup],
   )
-
-  // ── Responder: finger(s) down ─────────────────────────────────────────────
-  const onGrant = useCallback(
-    (e: GestureResponderEvent) => {
-      stopAnims()
-      const ts = e.nativeEvent.touches
-
-      if (ts.length >= 2) {
-        touch.current = initPinch(ts, scale.current, txVal.current, tyVal.current)
-        return
-      }
-
-      // 웹 터치 이벤트에서 touches 가 비어있는 경우 방어 (changedTouches 로만 오는 케이스)
-      if (!ts[0]) return
-
-      // Single finger — check for double-tap
-      const now = Date.now()
-      if (now - lastTapAt.current < 280) {
-        lastTapAt.current = 0
-        touch.current = null
-        resetView()
-        return
-      }
-      lastTapAt.current = now
-
-      const cvs = toCanvas(ts[0].pageX, ts[0].pageY)
-      touch.current = {
-        mode: 'single',
-        startPageX: ts[0].pageX,
-        startPageY: ts[0].pageY,
-        startCanvasX: cvs.x,
-        startCanvasY: cvs.y,
-        savedTx: txVal.current,
-        savedTy: tyVal.current,
-        moved: false,
-      }
-    },
-    [stopAnims, resetView, initPinch, toCanvas],
-  )
-
-  // ── Responder: move ───────────────────────────────────────────────────────
-  const onMove = useCallback(
-    (e: GestureResponderEvent) => {
-      const ts = e.nativeEvent.touches
-      const t = touch.current
-      if (!t) return
-
-      // ── Transition single → pinch when second finger appears ──────────────
-      if (ts.length >= 2 && t.mode === 'single') {
-        touch.current = initPinch(ts, scale.current, txVal.current, tyVal.current)
-        return
-      }
-
-      if (ts.length >= 2 && t.mode === 'pinch') {
-        // ── Pinch update ───────────────────────────────────────────────────
-        const newDist = pageDist(ts[0], ts[1])
-        const ratio = newDist / t.startDist
-        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, t.savedScale * ratio))
-
-        // Current midpoint in canvas coords
-        const newMid = toCanvas((ts[0].pageX + ts[1].pageX) / 2, (ts[0].pageY + ts[1].pageY) / 2)
-        const newFx = newMid.x - cW.current / 2 // relative to canvas centre
-
-        // Correct formula: the SVG focal point (fpX) maps to the current midpoint.
-        // Container_x = cW/2 + fpX * newScale + newTx
-        // → newTx = newFx - fpX * newScale
-        const newTx = newFx - t.fpX * newScale
-        const newFy = newMid.y - cH.current / 2
-        const newTy = newFy - t.fpY * newScale
-
-        scaleAnim.setValue(newScale)
-        txAnim.setValue(newTx)
-        tyAnim.setValue(newTy)
-        scale.current = newScale
-        txVal.current = newTx
-        tyVal.current = newTy
-        return
-      }
-
-      if (ts.length === 1 && t.mode === 'single') {
-        // ── Single-finger pan ──────────────────────────────────────────────
-        const dx = ts[0].pageX - t.startPageX
-        const dy = ts[0].pageY - t.startPageY
-        if (Math.sqrt(dx * dx + dy * dy) > TAP_MAX_DIST) t.moved = true
-        const newTx = t.savedTx + dx
-        const newTy = t.savedTy + dy
-        txAnim.setValue(newTx)
-        tyAnim.setValue(newTy)
-        txVal.current = newTx
-        tyVal.current = newTy
-      }
-    },
-    [initPinch, toCanvas, scaleAnim, txAnim, tyAnim],
-  )
-
-  // ── Responder: release ────────────────────────────────────────────────────
-  const onRelease = useCallback((e: GestureResponderEvent) => {
-    const t = touch.current
-    const remaining = e.nativeEvent.touches
-    if (remaining.length === 0) touch.current = null
-
-    if (!t || t.mode !== 'single' || t.moved) return
-
-    // 웹은 DOM click 폴백이 탭을 처리하므로 여기서는 히트테스트하지 않음 (중복 방지)
-    if (Platform.OS === 'web') return
-
-    // Tap — convert canvas coords to SVG viewBox coords
-    // Canvas coord of touch:
-    const lx = t.startCanvasX
-    const ly = t.startCanvasY
-    const s = scale.current
-    // SVG display space (from SVG top-left):
-    //   dispX = SVG_W/2 + (lx - cW/2 - txVal) / s
-    const dispX = SVG_DISPLAY_W / 2 + (lx - cW.current / 2 - txVal.current) / s
-    const dispY = SVG_DISPLAY_H / 2 + (ly - cH.current / 2 - tyVal.current) / s
-    // Map to viewBox:
-    const svgX = (dispX * VIEW_BOX_W) / SVG_DISPLAY_W
-    const svgY = (dispY * VIEW_BOX_H) / SVG_DISPLAY_H
-
-    const hit = hitTestZones(svgX, svgY, bodyViewRef.current)
-    if (hit) {
-      setSelectedCode(hit)
-      setSheetCode(hit)
-    }
-  }, [])
-
-  // ── Layout: measure canvas page position for coordinate conversion ─────────
-  const onContainerLayout = useCallback((_e: LayoutChangeEvent) => {
-    canvasRef.current?.measure((_x, _y, w, h, px, py) => {
-      canvasPageX.current = px
-      canvasPageY.current = py
-      cW.current = w
-      cH.current = h
-    })
-  }, [])
-
-  const switchView = useCallback((v: 'front' | 'back') => {
-    bodyViewRef.current = v
-    setBodyView(v)
-  }, [])
 
   // ── Sheet handlers ─────────────────────────────────────────────────────────
-  const handleClose = useCallback(() => {
-    setSheetCode(null)
-    setSelectedCode(null)
-  }, [])
-
+  const handleClose = useCallback(() => setSheetCode(null), [])
   const handleSave = useCallback(
     async (severity: Severity, note: string) => {
       if (!sheetCode) return
       await onSaveSymptom(sheetCode, severity, note)
       setSheetCode(null)
-      setSelectedCode(null)
     },
     [sheetCode, onSaveSymptom],
   )
-
   const handleResolve = useCallback(async () => {
     if (!sheetCode || !onResolveSymptom) return
     await onResolveSymptom(sheetCode)
     setSheetCode(null)
-    setSelectedCode(null)
   }, [sheetCode, onResolveSymptom])
+
+  const onCanvasLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout
+    setBox({ w: width, h: height })
+  }, [])
+
+  // contain: 가용 영역 안에 몸이 다 들어오게
+  const figW = box.w && box.h ? Math.floor(Math.min(box.w, box.h / DISPLAY_ASPECT_HW)) : 0
 
   return (
     <View style={styles.root}>
-      {/* Front / Back toggle */}
-      <View style={styles.toggleRow}>
-        {(['front', 'back'] as const).map((v) => (
-          <TouchableOpacity
-            key={v}
-            style={[styles.toggleBtn, bodyView === v && styles.toggleActive]}
-            onPress={() => switchView(v)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.toggleText, bodyView === v && styles.toggleTextActive]}>
-              {v === 'front' ? '앞면' : '뒷면'}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* 상단 바: 뒤로 버튼 / 안내 */}
+      <View style={styles.bar}>
+        {level !== 'full' ? (
+          <>
+            <TouchableOpacity onPress={zoomToFull} style={styles.backBtn} activeOpacity={0.8}>
+              <Text style={styles.backText}>← 전체</Text>
+            </TouchableOpacity>
+            <Text style={styles.groupLabel}>{BODY_PART_GROUP_LABELS[level]}</Text>
+          </>
+        ) : (
+          <Text style={styles.hint}>부위를 탭하면 확대됩니다</Text>
+        )}
       </View>
 
-      <Text style={styles.hint}>핀치로 확대 · 두 번 탭하면 초기화</Text>
-
-      {/* Touch canvas */}
+      {/* 캔버스 (핀치 오므리면 축소 — 두 손가락일 때만 responder 획득) */}
       <View
-        ref={canvasRef}
-        // 웹: 브라우저가 터치를 스크롤/줌으로 가로채지 않도록 (device mode 탭 문제 해결)
-        style={[styles.canvas, Platform.OS === 'web' && ({ touchAction: 'none' } as object)]}
-        onLayout={onContainerLayout}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderGrant={onGrant}
-        onResponderMove={onMove}
-        onResponderRelease={onRelease}
-        onResponderTerminate={onRelease}
-        collapsable={false}
+        style={styles.canvas}
+        onLayout={onCanvasLayout}
+        onStartShouldSetResponder={() => false}
+        onMoveShouldSetResponder={(e) => e.nativeEvent.touches.length === 2}
+        onResponderMove={(e) => {
+          const t = e.nativeEvent.touches
+          if (t.length !== 2) return
+          const d = Math.hypot(t[0].pageX - t[1].pageX, t[0].pageY - t[1].pageY)
+          if (pinchStart.current == null) {
+            pinchStart.current = d
+            return
+          }
+          if (d < pinchStart.current * 0.7) {
+            zoomToFull()
+            pinchStart.current = null
+          }
+        }}
+        onResponderRelease={() => {
+          pinchStart.current = null
+        }}
+        onResponderTerminate={() => {
+          pinchStart.current = null
+        }}
       >
-        <Animated.View
-          style={[
-            styles.svgWrap,
-            { transform: [{ translateX: txAnim }, { translateY: tyAnim }, { scale: scaleAnim }] },
-          ]}
-        >
-          <BodyFigureSvg
-            bodyView={bodyView}
+        {figW > 0 && (
+          <BodyFigureFigma
+            width={figW}
+            viewBox={viewBox}
             severityMap={severityMap}
-            selectedCode={selectedCode}
+            selectedCode={sheetCode}
+            onSelect={handlePartTap}
           />
-        </Animated.View>
+        )}
       </View>
-
-      {/* Reset zoom button */}
-      <TouchableOpacity style={styles.resetBtn} onPress={resetView} activeOpacity={0.7}>
-        <Text style={styles.resetText}>↺</Text>
-      </TouchableOpacity>
 
       <SymptomSheet
         visible={sheetCode !== null}
@@ -446,62 +194,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surfaceContainerLow,
   },
-  toggleRow: {
+  bar: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 4,
+    minHeight: 44,
   },
-  toggleBtn: {
-    paddingHorizontal: 22,
-    paddingVertical: 7,
+  backBtn: {
+    backgroundColor: Colors.primary,
     borderRadius: 9999,
-    backgroundColor: Colors.surfaceContainerHigh,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
-  toggleActive: { backgroundColor: Colors.primary },
-  toggleText: {
+  backText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.onSurfaceVariant,
+    color: Colors.surface,
   },
-  toggleTextActive: { color: Colors.surface },
+  groupLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.onSurface,
+  },
   hint: {
-    textAlign: 'center',
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.onSurfaceVariant,
-    opacity: 0.55,
-    marginBottom: 6,
+    opacity: 0.7,
   },
   canvas: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  svgWrap: {
-    width: SVG_DISPLAY_W,
-    height: SVG_DISPLAY_H,
-  },
-  resetBtn: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.surfaceContainerHigh,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.onSurface,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  resetText: {
-    fontSize: 18,
-    color: Colors.onSurfaceVariant,
-    lineHeight: 20,
   },
 })
