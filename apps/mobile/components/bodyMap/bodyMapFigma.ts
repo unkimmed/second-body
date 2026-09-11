@@ -9,6 +9,34 @@ export const DISPLAY_ASPECT_HW = FULL_RECT.h / FULL_RECT.w
 // flip 축(x=502.5) 기준 미러 → 표시좌표 = 1005 - 원본x
 const FLIP_X2 = 1005
 
+export type BodyView = 'front' | 'back'
+
+// 앞면 전용(뒷면엔 없음) / 뒷면 전용 / 나머지는 both
+const FRONT_ONLY = new Set<BodyPartCode>([
+  'left_eye',
+  'right_eye',
+  'nose',
+  'mouth',
+  'left_ear',
+  'right_ear',
+  'skin_face',
+  'chest',
+  'abdomen',
+  'pelvis',
+  'genitalia',
+])
+const BACK_ONLY = new Set<BodyPartCode>(['back', 'lower_back'])
+
+export function partView(code: BodyPartCode): 'front' | 'back' | 'both' {
+  if (FRONT_ONLY.has(code)) return 'front'
+  if (BACK_ONLY.has(code)) return 'back'
+  return 'both'
+}
+export function isVisibleOn(code: BodyPartCode, view: BodyView): boolean {
+  const v = partView(code)
+  return v === 'both' || v === view
+}
+
 // Figma "Bodymap SVG" 캔버스의 부위별 path (node 1090:137, 원본 viewBox 1005×1328)
 // 지금은 머리·목 정면만 확정. 팔·다리·몸통·뒷면은 추후 추가.
 
@@ -88,6 +116,10 @@ export const FIGMA_PARTS: FigmaPart[] = [
   { code: 'hip', anchor: { cx: 502, cy: 650, r: 38 } },
   { code: 'genitalia', anchor: { cx: 502, cy: 685, r: 14 } },
 
+  // ── 몸통 뒷면 (back view 전용) ────────────────────────────────────
+  { code: 'back', anchor: { cx: 502, cy: 430, r: 42 } },
+  { code: 'lower_back', anchor: { cx: 502, cy: 555, r: 32 } },
+
   // ── 왼팔 (인물 기준 왼쪽 = 화면 왼쪽, x<502) ──────────────────────
   { code: 'left_shoulder', anchor: { cx: 410, cy: 318, r: 26 } },
   { code: 'left_upper_arm', anchor: { cx: 372, cy: 398, r: 26 } },
@@ -119,12 +151,12 @@ export const FIGMA_PARTS: FigmaPart[] = [
   { code: 'right_foot', anchor: { cx: 557, cy: 1125, r: 22 } },
 ]
 
-/** 그룹 줌 대상 viewBox 사각형 (표시좌표, flip 반영, 패딩 포함) */
-export function groupViewRect(group: BodyGroupCode, pad = 40) {
+/** 그룹 줌 대상 viewBox 사각형 (해당 view 에 보이는 부위만, front 는 flip 반영) */
+export function groupViewRect(group: BodyGroupCode, view: BodyView, pad = 40) {
   const codes = BODY_PART_GROUP_CHILDREN[group] as readonly BodyPartCode[]
   const anchors = FIGMA_PARTS.filter(
-    (p): p is FigmaPart & { anchor: NonNullable<FigmaPart['anchor']> } =>
-      !!p.code && !!p.anchor && codes.includes(p.code),
+    (p): p is FigmaPart & { code: BodyPartCode; anchor: NonNullable<FigmaPart['anchor']> } =>
+      !!p.code && !!p.anchor && codes.includes(p.code) && isVisibleOn(p.code, view),
   ).map((p) => p.anchor)
 
   let ax0 = Infinity
@@ -137,8 +169,7 @@ export function groupViewRect(group: BodyGroupCode, pad = 40) {
     y0 = Math.min(y0, a.cy - a.r)
     y1 = Math.max(y1, a.cy + a.r)
   }
-  // flip x
-  const dx0 = FLIP_X2 - ax1
-  const dx1 = FLIP_X2 - ax0
-  return { x: dx0 - pad, y: y0 - pad, w: dx1 - dx0 + pad * 2, h: y1 - y0 + pad * 2 }
+  // front 는 몸 중심선 기준 미러, back 은 원본 좌표 그대로
+  const [lx, rx] = view === 'front' ? [FLIP_X2 - ax1, FLIP_X2 - ax0] : [ax0, ax1]
+  return { x: lx - pad, y: y0 - pad, w: rx - lx + pad * 2, h: y1 - y0 + pad * 2 }
 }

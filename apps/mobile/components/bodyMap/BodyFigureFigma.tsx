@@ -3,7 +3,14 @@ import { Platform } from 'react-native'
 import Svg, { Path, Circle, G, Defs, RadialGradient, Stop } from 'react-native-svg'
 import { BodyPartCode, Severity } from '@second-body/shared'
 import { Colors } from '@/constants/theme'
-import { FIGMA_VIEW_BOX, FIGMA_FLIP, BODY_OUTLINE_D, FIGMA_PARTS } from './bodyMapFigma'
+import {
+  FIGMA_VIEW_BOX,
+  FIGMA_FLIP,
+  BODY_OUTLINE_D,
+  FIGMA_PARTS,
+  isVisibleOn,
+  BodyView,
+} from './bodyMapFigma'
 
 const GLOW_COLOR: Record<Severity, string> = {
   1: '#86efac',
@@ -25,6 +32,8 @@ interface Props {
   width?: number
   /** 줌용 viewBox 오버라이드 (기본: 전체뷰) */
   viewBox?: string
+  /** 앞면/뒷면 (기본 front) */
+  view?: BodyView
   severityMap: Partial<Record<BodyPartCode, Severity>>
   selectedCode: BodyPartCode | null
   onSelect: (code: BodyPartCode) => void
@@ -37,11 +46,14 @@ const ASPECT = VB[3] / VB[2]
 export function BodyFigureFigma({
   width = 260,
   viewBox = FIGMA_VIEW_BOX,
+  view = 'front',
   severityMap,
   selectedCode,
   onSelect,
 }: Props) {
   const height = Math.round(width * ASPECT)
+  // 뒷면은 원본 좌표(뒤에서 본 방향), 앞면은 몸 중심선 기준 미러
+  const flip = view === 'front' ? FIGMA_FLIP : undefined
 
   return (
     <Svg width={width} height={height} viewBox={viewBox}>
@@ -55,14 +67,14 @@ export function BodyFigureFigma({
         ))}
       </Defs>
 
-      {/* 몸 중심선 기준 좌우 반전 (정면 = 마주 본 사람) */}
-      <G transform={FIGMA_FLIP}>
-        {/* 1. 전신 외곽선 */}
+      {/* front=마주 본 사람(미러), back=뒤에서 본 방향(원본) */}
+      <G transform={flip}>
+        {/* 1. 전신 외곽선 (대칭이라 앞뒤 공용) */}
         <Path d={BODY_OUTLINE_D} stroke={OUTLINE} strokeWidth={2.5} fill="none" />
 
-        {/* 2. 글로우 (증상 있는 부위 앵커) */}
+        {/* 2. 글로우 (해당 view 에 보이는, 증상 있는 부위) */}
         {FIGMA_PARTS.map((p, i) => {
-          if (!p.code || !p.anchor) return null
+          if (!p.code || !p.anchor || !isVisibleOn(p.code, view)) return null
           const sev = severityMap[p.code]
           if (!sev) return null
           return (
@@ -76,22 +88,23 @@ export function BodyFigureFigma({
           )
         })}
 
-        {/* 3. 부위 라인아트 (d 있는 것만; 선택 시 primary 강조) */}
-        {FIGMA_PARTS.map((p, i) =>
-          p.d ? (
-            <Path
-              key={`line-${i}`}
-              d={p.d}
-              stroke={p.code && p.code === selectedCode ? Colors.primary : FACE_STROKE}
-              strokeWidth={p.code && p.code === selectedCode ? 1.6 : 1}
-              fill="none"
-            />
-          ) : null,
-        )}
+        {/* 3. 얼굴 라인아트 (front 에서만; d 있는 부위) */}
+        {view === 'front' &&
+          FIGMA_PARTS.map((p, i) =>
+            p.d ? (
+              <Path
+                key={`line-${i}`}
+                d={p.d}
+                stroke={p.code && p.code === selectedCode ? Colors.primary : FACE_STROKE}
+                strokeWidth={p.code && p.code === selectedCode ? 1.6 : 1}
+                fill="none"
+              />
+            ) : null,
+          )}
 
-        {/* 4. 탭 타깃 (투명 원, 부위만) */}
+        {/* 4. 탭 타깃 (해당 view 에 보이는 부위만) */}
         {FIGMA_PARTS.map((p, i) => {
-          if (!p.code || !p.anchor) return null
+          if (!p.code || !p.anchor || !isVisibleOn(p.code, view)) return null
           const code = p.code
           return (
             <Circle
