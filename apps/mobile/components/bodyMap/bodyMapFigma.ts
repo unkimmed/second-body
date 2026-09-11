@@ -1,4 +1,11 @@
-import { BodyPartCode } from '@second-body/shared'
+import { BodyPartCode, BodyPartGroupCode, BODY_PART_GROUP_CHILDREN } from '@second-body/shared'
+
+export type BodyGroupCode = Exclude<BodyPartGroupCode, 'body'>
+
+// 전체뷰 viewBox 사각형 (FIGMA_VIEW_BOX 파싱)
+export const FULL_RECT = { x: 230, y: 100, w: 545, h: 1050 }
+// flip 축(x=502.5) 기준 미러 → 표시좌표 = 1005 - 원본x
+const FLIP_X2 = 1005
 
 // Figma "Bodymap SVG" 캔버스의 부위별 path (node 1090:137, 원본 viewBox 1005×1328)
 // 지금은 머리·목 정면만 확정. 팔·다리·몸통·뒷면은 추후 추가.
@@ -109,3 +116,27 @@ export const FIGMA_PARTS: FigmaPart[] = [
   { code: 'right_ankle', anchor: { cx: 557, cy: 1075, r: 16 } },
   { code: 'right_foot', anchor: { cx: 557, cy: 1125, r: 22 } },
 ]
+
+/** 그룹 줌 대상 viewBox 사각형 (표시좌표, flip 반영, 패딩 포함) */
+export function groupViewRect(group: BodyGroupCode, pad = 40) {
+  const codes = BODY_PART_GROUP_CHILDREN[group] as readonly BodyPartCode[]
+  const anchors = FIGMA_PARTS.filter(
+    (p): p is FigmaPart & { anchor: NonNullable<FigmaPart['anchor']> } =>
+      !!p.code && !!p.anchor && codes.includes(p.code),
+  ).map((p) => p.anchor)
+
+  let ax0 = Infinity
+  let ax1 = -Infinity
+  let y0 = Infinity
+  let y1 = -Infinity
+  for (const a of anchors) {
+    ax0 = Math.min(ax0, a.cx - a.r)
+    ax1 = Math.max(ax1, a.cx + a.r)
+    y0 = Math.min(y0, a.cy - a.r)
+    y1 = Math.max(y1, a.cy + a.r)
+  }
+  // flip x
+  const dx0 = FLIP_X2 - ax1
+  const dx1 = FLIP_X2 - ax0
+  return { x: dx0 - pad, y: y0 - pad, w: dx1 - dx0 + pad * 2, h: y1 - y0 + pad * 2 }
+}
