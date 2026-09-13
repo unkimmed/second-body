@@ -5,31 +5,14 @@ import { Text } from '@/components/Text'
 import { BodyPartCode, Severity, BODY_PART_TO_GROUP } from '@second-body/shared'
 import { BODY_PART_LABELS, BODY_PART_GROUP_LABELS } from '@/constants/symptom'
 import { BodyFigureFigma } from '@/components/bodyMap/BodyFigureFigma'
-import { FULL_RECT, groupViewRect, BodyGroupCode } from '@/components/bodyMap/bodyMapFigma'
+import { FULL_RECT, groupZoomRect, BodyGroupCode } from '@/components/bodyMap/bodyMapFigma'
 
 const W = 300
 const H = Math.round((W * FULL_RECT.h) / FULL_RECT.w)
-const DISPLAY_ASPECT = FULL_RECT.w / FULL_RECT.h
 
 type Rect = { x: number; y: number; w: number; h: number }
 
 const rectToViewBox = (r: Rect) => `${r.x} ${r.y} ${r.w} ${r.h}`
-
-/** 그룹 rect 를 표시 박스 비율에 맞춰 확장 (레터박스 방지) */
-function fitAspect(r: Rect): Rect {
-  const a = DISPLAY_ASPECT
-  let { x, y, w, h } = r
-  if (w / h < a) {
-    const nw = h * a
-    x -= (nw - w) / 2
-    w = nw
-  } else {
-    const nh = w / a
-    y -= (nh - h) / 2
-    h = nh
-  }
-  return { x, y, w, h }
-}
 
 export default function BodyMapPreview() {
   const insets = useSafeAreaInsets()
@@ -72,7 +55,7 @@ export default function BodyMapPreview() {
     (g: BodyGroupCode) => {
       levelRef.current = g
       setLevel(g)
-      animateTo(fitAspect(groupViewRect(g, 'front')))
+      animateTo(groupZoomRect(g, 'front'))
     },
     [animateTo],
   )
