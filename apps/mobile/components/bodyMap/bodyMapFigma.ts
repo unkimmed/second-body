@@ -1,11 +1,9 @@
-import { BodyPartCode, BodyPartGroupCode, BODY_PART_GROUP_CHILDREN } from '@second-body/shared'
+import { BodyPartCode, BodyPartGroupCode } from '@second-body/shared'
 
 export type BodyGroupCode = Exclude<BodyPartGroupCode, 'body'>
 
 // 전체뷰 viewBox 사각형 (FIGMA_VIEW_BOX 파싱)
 export const FULL_RECT = { x: 230, y: 100, w: 545, h: 1050 }
-// 표시 박스 세로/가로 비율 (전체뷰 기준 고정)
-export const DISPLAY_ASPECT_HW = FULL_RECT.h / FULL_RECT.w
 // flip 축(x=502.5) 기준 미러 → 표시좌표 = 1005 - 원본x
 const FLIP_X2 = 1005
 
@@ -151,25 +149,29 @@ export const FIGMA_PARTS: FigmaPart[] = [
   { code: 'right_foot', anchor: { cx: 557, cy: 1125, r: 22 } },
 ]
 
-/** 그룹 줌 대상 viewBox 사각형 (해당 view 에 보이는 부위만, front 는 flip 반영) */
-export function groupViewRect(group: BodyGroupCode, view: BodyView, pad = 40) {
-  const codes = BODY_PART_GROUP_CHILDREN[group] as readonly BodyPartCode[]
-  const anchors = FIGMA_PARTS.filter(
-    (p): p is FigmaPart & { code: BodyPartCode; anchor: NonNullable<FigmaPart['anchor']> } =>
-      !!p.code && !!p.anchor && codes.includes(p.code) && isVisibleOn(p.code, view),
-  ).map((p) => p.anchor)
+type Rect = { x: number; y: number; w: number; h: number }
 
-  let ax0 = Infinity
-  let ax1 = -Infinity
-  let y0 = Infinity
-  let y1 = -Infinity
-  for (const a of anchors) {
-    ax0 = Math.min(ax0, a.cx - a.r)
-    ax1 = Math.max(ax1, a.cx + a.r)
-    y0 = Math.min(y0, a.cy - a.r)
-    y1 = Math.max(y1, a.cy + a.r)
-  }
-  // front 는 몸 중심선 기준 미러, back 은 원본 좌표 그대로
-  const [lx, rx] = view === 'front' ? [FLIP_X2 - ax1, FLIP_X2 - ax0] : [ax0, ax1]
-  return { x: lx - pad, y: y0 - pad, w: rx - lx + pad * 2, h: y1 - y0 + pad * 2 }
+/**
+ * 그룹별 "실제 몸 영역" bbox (authored 좌표, 실루엣 폭 기준).
+ * 앵커(중심점)가 아니라 실제 몸 폭에 맞춰야 좌우 여백 없이 가로가 꽉 찬다.
+ * front 는 몸 중심선 기준 미러(flip)해서 사용.
+ */
+const GROUP_RECT_AUTHORED: Record<BodyGroupCode, Rect> = {
+  head_neck: { x: 442, y: 104, w: 121, h: 190 },
+  left_arm: { x: 248, y: 296, w: 202, h: 392 },
+  right_arm: { x: 555, y: 296, w: 202, h: 392 },
+  torso: { x: 394, y: 336, w: 217, h: 402 },
+  left_leg: { x: 392, y: 686, w: 120, h: 458 },
+  right_leg: { x: 493, y: 686, w: 120, h: 458 },
+}
+
+/**
+ * 그룹 줌 viewBox — 실제 몸 폭에 맞춘 bbox 를 사용해 좌우 여백을 없앰.
+ * front 는 flip(미러), back 은 원본 좌표 그대로.
+ */
+export function groupZoomRect(group: BodyGroupCode, view: BodyView): Rect {
+  const r = GROUP_RECT_AUTHORED[group]
+  if (view === 'back') return { ...r }
+  // front: 몸 중심선(x=502.5) 기준 좌우 반전
+  return { ...r, x: FLIP_X2 - (r.x + r.w) }
 }

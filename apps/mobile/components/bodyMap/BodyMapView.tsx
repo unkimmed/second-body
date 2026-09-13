@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, TouchableOpacity, StyleSheet, Animated, LayoutChangeEvent } from 'react-native'
 import { Text } from '@/components/Text'
 import { BodyPartCode, Severity, BODY_PART_TO_GROUP } from '@second-body/shared'
@@ -6,33 +6,12 @@ import { BODY_PART_GROUP_LABELS } from '@/constants/symptom'
 import { Colors } from '@/constants/theme'
 import { BodyFigureFigma } from './BodyFigureFigma'
 import { SymptomSheet } from './SymptomSheet'
-import {
-  FULL_RECT,
-  DISPLAY_ASPECT_HW,
-  groupViewRect,
-  BodyGroupCode,
-  BodyView,
-} from './bodyMapFigma'
+import { FULL_RECT, groupZoomRect, BodyGroupCode, BodyView } from './bodyMapFigma'
 
 type Rect = { x: number; y: number; w: number; h: number }
+type Level = 'full' | BodyGroupCode
 
 const rectToViewBox = (r: Rect) => `${r.x} ${r.y} ${r.w} ${r.h}`
-const DISPLAY_ASPECT_WH = FULL_RECT.w / FULL_RECT.h
-
-/** 그룹 rect 를 표시 박스 비율에 맞춰 확장 (레터박스 방지) */
-function fitAspect(r: Rect): Rect {
-  let { x, y, w, h } = r
-  if (w / h < DISPLAY_ASPECT_WH) {
-    const nw = h * DISPLAY_ASPECT_WH
-    x -= (nw - w) / 2
-    w = nw
-  } else {
-    const nh = w / DISPLAY_ASPECT_WH
-    y -= (nh - h) / 2
-    h = nh
-  }
-  return { x, y, w, h }
-}
 
 interface Props {
   severityMap: Partial<Record<BodyPartCode, Severity>>
@@ -42,17 +21,42 @@ interface Props {
 }
 
 export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymptom }: Props) {
-  const [level, setLevel] = useState<'full' | BodyGroupCode>('full')
+  const [level, setLevel] = useState<Level>('full')
   const [view, setView] = useState<BodyView>('front')
   const [viewBox, setViewBox] = useState(rectToViewBox(FULL_RECT))
   const [sheetCode, setSheetCode] = useState<BodyPartCode | null>(null)
   const [box, setBox] = useState({ w: 0, h: 0 })
 
-  const levelRef = useRef<'full' | BodyGroupCode>('full')
+  const levelRef = useRef<Level>('full')
   const viewRef = useRef<BodyView>('front')
   const curRect = useRef<Rect>(FULL_RECT)
   const progress = useRef(new Animated.Value(1)).current
   const pinchStart = useRef<number | null>(null)
+
+  // 컨테이너 비율에 맞춘 viewBox rect 계산
+  // full → 몸 전체를 담되(contain), group → 몸 폭이 가로를 채우도록(fill-width, 좌우 여백 X)
+  const rectFor = useCallback(
+    (lv: Level, vw: BodyView): Rect => {
+      const aspWH = box.w / box.h || FULL_RECT.w / FULL_RECT.h
+      if (lv === 'full') {
+        let { x, y, w, h } = FULL_RECT
+        if (w / h < aspWH) {
+          const nw = h * aspWH
+          x -= (nw - w) / 2
+          w = nw
+        } else {
+          const nh = w / aspWH
+          y -= (nh - h) / 2
+          h = nh
+        }
+        return { x, y, w, h }
+      }
+      const g = groupZoomRect(lv, vw)
+      const h = g.w / aspWH
+      return { x: g.x, y: g.y + g.h / 2 - h / 2, w: g.w, h }
+    },
+    [box],
+  )
 
   // ── Zoom animation (viewBox 보간) ──────────────────────────────────────────
   const animateTo = useCallback(
@@ -78,21 +82,29 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
     [progress],
   )
 
+  // 레이아웃(컨테이너 크기) 변하면 현재 레벨 기준으로 viewBox 스냅
+  useEffect(() => {
+    if (!box.w || !box.h) return
+    const r = rectFor(levelRef.current, viewRef.current)
+    curRect.current = r
+    setViewBox(rectToViewBox(r))
+  }, [box, rectFor])
+
   const zoomToGroup = useCallback(
     (g: BodyGroupCode) => {
       levelRef.current = g
       setLevel(g)
-      animateTo(fitAspect(groupViewRect(g, viewRef.current)))
+      animateTo(rectFor(g, viewRef.current))
     },
-    [animateTo],
+    [animateTo, rectFor],
   )
 
   const zoomToFull = useCallback(() => {
     if (levelRef.current === 'full') return
     levelRef.current = 'full'
     setLevel('full')
-    animateTo(FULL_RECT)
-  }, [animateTo])
+    animateTo(rectFor('full', viewRef.current))
+  }, [animateTo, rectFor])
 
   const switchView = useCallback(
     (v: BodyView) => {
@@ -100,9 +112,11 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
       viewRef.current = v
       setView(v)
       setSheetCode(null)
-      zoomToFull()
+      levelRef.current = 'full'
+      setLevel('full')
+      animateTo(rectFor('full', v))
     },
-    [zoomToFull],
+    [animateTo, rectFor],
   )
 
   // ── Part tap: L0 → 그룹 줌인, L1 → 증상 시트 ────────────────────────────────
@@ -138,12 +152,9 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
     setBox({ w: width, h: height })
   }, [])
 
-  // contain: 가용 영역 안에 몸이 다 들어오게
-  const figW = box.w && box.h ? Math.floor(Math.min(box.w, box.h / DISPLAY_ASPECT_HW)) : 0
-
   return (
     <View style={styles.root}>
-      {/* 상단 바: 뒤로 버튼 / 안내 */}
+      {/* 상단 바: 뒤로 버튼 / 앞뒤 토글 */}
       <View style={styles.bar}>
         {level !== 'full' ? (
           <>
@@ -196,9 +207,10 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
           pinchStart.current = null
         }}
       >
-        {figW > 0 && (
+        {box.w > 0 && box.h > 0 && (
           <BodyFigureFigma
-            width={figW}
+            width={box.w}
+            height={box.h}
             viewBox={viewBox}
             view={view}
             severityMap={severityMap}

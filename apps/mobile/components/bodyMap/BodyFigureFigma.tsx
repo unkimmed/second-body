@@ -30,6 +30,8 @@ const WEB_CURSOR: any = IS_WEB ? { style: { cursor: 'pointer' } } : {}
 
 interface Props {
   width?: number
+  /** 명시하면 SVG 높이를 이 값으로 (컨테이너 채우기용). 없으면 전체뷰 비율로 계산 */
+  height?: number
   /** 줌용 viewBox 오버라이드 (기본: 전체뷰) */
   viewBox?: string
   /** 앞면/뒷면 (기본 front) */
@@ -45,18 +47,19 @@ const ASPECT = VB[3] / VB[2]
 
 export function BodyFigureFigma({
   width = 260,
+  height,
   viewBox = FIGMA_VIEW_BOX,
   view = 'front',
   severityMap,
   selectedCode,
   onSelect,
 }: Props) {
-  const height = Math.round(width * ASPECT)
+  const svgHeight = height ?? Math.round(width * ASPECT)
   // 뒷면은 원본 좌표(뒤에서 본 방향), 앞면은 몸 중심선 기준 미러
   const flip = view === 'front' ? FIGMA_FLIP : undefined
 
   return (
-    <Svg width={width} height={height} viewBox={viewBox}>
+    <Svg width={width} height={svgHeight} viewBox={viewBox}>
       <Defs>
         {([1, 2, 3, 4, 5] as Severity[]).map((s) => (
           <RadialGradient key={s} id={`fglow-${s}`} cx="50%" cy="50%" r="50%">
