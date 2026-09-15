@@ -34,7 +34,7 @@ export default function HomeScreen() {
 
   async function loadRecords() {
     try {
-      const data = await fetchRecords(userId!)
+      const data = await fetchRecords()
       setRecords(data)
     } catch (e) {
       console.error('기록 목록 불러오기 실패:', e)
@@ -70,7 +70,7 @@ export default function HomeScreen() {
       const existing = findActive(code)
       try {
         if (!existing) {
-          const res = await createRecord(userId!, {
+          const res = await createRecord({
             record_date: todayString(),
             body_part_code: code,
             severity,
@@ -79,7 +79,7 @@ export default function HomeScreen() {
           const created = (await res.json()) as SymptomRecord
           setRecords((prev) => [created, ...prev])
         } else {
-          const updated = await patchRecord(existing.id, userId!, {
+          const updated = await patchRecord(existing.id, {
             severity,
             note: note || undefined,
           })
@@ -97,7 +97,7 @@ export default function HomeScreen() {
       const existing = findActive(code)
       if (!existing) return
       try {
-        const updated = await resolveRecord(existing.id, userId!, true)
+        const updated = await resolveRecord(existing.id, true)
         setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
       } catch (e) {
         console.error('증상 해결 처리 실패:', e)
