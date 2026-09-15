@@ -39,7 +39,7 @@ export default function RecordDetailScreen() {
 
   useEffect(() => {
     if (!userId) return
-    fetchRecord(id, userId)
+    fetchRecord(id)
       .then((data) => setRecord(data))
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -64,7 +64,7 @@ export default function RecordDetailScreen() {
     setErrorMessage(null)
     setSaving(true)
     try {
-      const updated = await patchRecord(id, userId, {
+      const updated = await patchRecord(id, {
         body_part_code: editBodyPartCode,
         severity: editSeverity,
         note: editNote || undefined,
@@ -84,7 +84,7 @@ export default function RecordDetailScreen() {
     setErrorMessage(null)
     setResolving(true)
     try {
-      const updated = await resolveRecord(id, userId, !record.resolved_at)
+      const updated = await resolveRecord(id, !record.resolved_at)
       setRecord(updated)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -101,7 +101,7 @@ export default function RecordDetailScreen() {
     }
     setDeleting(true)
     try {
-      const res = await deleteRecord(id, userId)
+      const res = await deleteRecord(id)
       if (!res.ok) {
         const text = await res.text().catch(() => '')
         setErrorMessage(`삭제 실패 (${res.status}): ${text || '원인 불명'}`)
@@ -175,9 +175,7 @@ export default function RecordDetailScreen() {
             onPress={toggleResolve}
             disabled={resolving}
             className={`py-3 rounded-md items-center ${
-              record.resolved_at
-                ? 'border border-outline-variant'
-                : 'bg-primary'
+              record.resolved_at ? 'border border-outline-variant' : 'bg-primary'
             } ${resolving ? 'opacity-50' : ''}`}
           >
             <Text

@@ -50,7 +50,7 @@ export default function NewRecordScreen() {
 
     setSubmitting(true)
     try {
-      const res = await createRecord(userId, {
+      const res = await createRecord({
         record_date: recordDate,
         body_part_code: bodyPartCode,
         severity,

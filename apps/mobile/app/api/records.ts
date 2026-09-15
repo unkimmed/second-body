@@ -1,59 +1,55 @@
 import { CreateSymptomRecordDto, UpdateSymptomRecordDto, SymptomRecord } from '@second-body/shared'
 import { API_URL } from '@/lib/config'
+import { supabase } from '@/lib/supabase'
 
-function authHeaders(userId: string) {
-  return { 'x-user-id': userId }
+/** 현재 세션의 Supabase access token 을 Authorization 헤더로 (없으면 빈 헤더) */
+async function authHeader(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-function jsonHeaders(userId: string) {
-  return { 'Content-Type': 'application/json', 'x-user-id': userId }
+async function jsonHeaders(): Promise<Record<string, string>> {
+  return { 'Content-Type': 'application/json', ...(await authHeader()) }
 }
 
-export async function fetchRecords(userId: string): Promise<SymptomRecord[]> {
-  const res = await fetch(`${API_URL}/records`, { headers: authHeaders(userId) })
+export async function fetchRecords(): Promise<SymptomRecord[]> {
+  const res = await fetch(`${API_URL}/records`, { headers: await authHeader() })
   return res.json() as Promise<SymptomRecord[]>
 }
 
-export async function fetchRecord(id: string, userId: string): Promise<SymptomRecord> {
-  const res = await fetch(`${API_URL}/records/${id}`, { headers: authHeaders(userId) })
+export async function fetchRecord(id: string): Promise<SymptomRecord> {
+  const res = await fetch(`${API_URL}/records/${id}`, { headers: await authHeader() })
   return res.json() as Promise<SymptomRecord>
 }
 
-export async function createRecord(
-  userId: string,
-  payload: CreateSymptomRecordDto,
-): Promise<Response> {
+export async function createRecord(payload: CreateSymptomRecordDto): Promise<Response> {
   return fetch(`${API_URL}/records`, {
     method: 'POST',
-    headers: jsonHeaders(userId),
+    headers: await jsonHeaders(),
     body: JSON.stringify(payload),
   })
 }
 
 export async function patchRecord(
   id: string,
-  userId: string,
   payload: UpdateSymptomRecordDto,
 ): Promise<SymptomRecord> {
   const res = await fetch(`${API_URL}/records/${id}`, {
     method: 'PATCH',
-    headers: jsonHeaders(userId),
+    headers: await jsonHeaders(),
     body: JSON.stringify(payload),
   })
   return res.json() as Promise<SymptomRecord>
 }
 
-export async function resolveRecord(
-  id: string,
-  userId: string,
-  resolved: boolean,
-): Promise<SymptomRecord> {
-  return patchRecord(id, userId, { resolved })
+export async function resolveRecord(id: string, resolved: boolean): Promise<SymptomRecord> {
+  return patchRecord(id, { resolved })
 }
 
-export async function deleteRecord(id: string, userId: string): Promise<Response> {
+export async function deleteRecord(id: string): Promise<Response> {
   return fetch(`${API_URL}/records/${id}`, {
     method: 'DELETE',
-    headers: authHeaders(userId),
+    headers: await authHeader(),
   })
 }

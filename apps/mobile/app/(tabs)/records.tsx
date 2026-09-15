@@ -21,7 +21,7 @@ export default function RecordsScreen() {
     useCallback(() => {
       if (!userId) return
       setLoading(true)
-      fetchRecords(userId)
+      fetchRecords()
         .then((data) => {
           const sorted = [...data].sort((a, b) => b.record_date.localeCompare(a.record_date))
           setRecords(sorted)
@@ -34,7 +34,7 @@ export default function RecordsScreen() {
   async function handleResolve(recordId: string, resolved: boolean) {
     if (!userId) return
     try {
-      const updated = await resolveRecord(recordId, userId, resolved)
+      const updated = await resolveRecord(recordId, resolved)
       setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
     } catch (e) {
       console.error('해결 처리 실패:', e)
