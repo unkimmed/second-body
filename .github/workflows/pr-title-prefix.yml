@@ -1,4 +1,4 @@
-name: PR Title Prefix
+name: PR Title Prefix + Jira link
 
 on:
   pull_request:
@@ -41,3 +41,37 @@ jobs:
               title: newTitle,
             });
             core.info(`Updated title: "${newTitle}"`);
+
+      - name: Prepend Jira link to PR description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const JIRA_BASE = 'https://0chae.atlassian.net/browse';
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+
+            // 브랜치명에서 티켓 키 추출 (예: MOM-25-foo → MOM-25)
+            const match = branch.match(/[A-Z]+-\d+/);
+            if (!match) {
+              core.info(`No ticket key found in branch "${branch}", skipping.`);
+              return;
+            }
+            const key = match[0];
+            const link = `${JIRA_BASE}/${key}`;
+            const body = pr.body || '';
+
+            // 이미 링크가 있으면 중복 방지
+            if (body.includes(link)) {
+              core.info('Jira link already present.');
+              return;
+            }
+
+            const line = `🔗 Jira: [${key}](${link})`;
+            const newBody = `${line}\n\n${body}`;
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              body: newBody,
+            });
+            core.info(`Prepended Jira link: ${link}`);
