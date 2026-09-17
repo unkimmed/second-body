@@ -100,7 +100,7 @@ function JsBottomTabNavigator({ initialRouteName, children, screenOptions }: any
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.surfaceContainerLow,
+    backgroundColor: Colors.surfaceContainerLowest,
   },
   scenes: {
     flex: 1,

@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 이메일 인증이 비활성화된 경우 즉시 세션 발급 → 프로필 생성 가능
     if (data.session) {
-      await supabase.from('users').insert({ id: data.user.id, email })
+      await supabase.from('users').insert({ id: data.user.id, email, name })
       await supabase
         .from('avatars')
         .insert({ user_id: data.user.id, avatar_name: avatarName, gender })

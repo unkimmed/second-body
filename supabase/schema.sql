@@ -114,6 +114,7 @@ INSERT INTO public.body_parts (code, name_ko, level, parent_code, side, svg_path
 CREATE TABLE public.users (
   id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email      TEXT UNIQUE NOT NULL,
+  name       TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
