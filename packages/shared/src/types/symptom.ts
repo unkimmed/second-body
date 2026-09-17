@@ -1,4 +1,5 @@
 export type AvatarGender = 'male' | 'female'
+export type SkinTone = 'light' | 'medium_light' | 'medium' | 'medium_dark' | 'dark'
 
 // 증상을 실제로 기록할 수 있는 부위 (L3, 39개)
 export const BODY_PART_CODES = [

@@ -22,7 +22,7 @@ function byRecency(a: SymptomRecord, b: SymptomRecord) {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { userId, signOut } = useAuth()
+  const { userId } = useAuth()
   const [records, setRecords] = useState<SymptomRecord[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -132,9 +132,6 @@ export default function HomeScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.historyText}>기록 추가</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={signOut} hitSlop={8}>
-            <Text style={styles.logoutText}>로그아웃</Text>
           </TouchableOpacity>
         </View>
       </View>

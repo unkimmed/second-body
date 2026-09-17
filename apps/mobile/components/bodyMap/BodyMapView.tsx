@@ -237,7 +237,7 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.surfaceContainerLow,
+    backgroundColor: Colors.surfaceContainerLowest,
   },
   bar: {
     flexDirection: 'row',
