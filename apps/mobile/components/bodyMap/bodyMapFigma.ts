@@ -1,4 +1,4 @@
-import { BodyPartCode, BodyPartGroupCode } from '@second-body/shared'
+import { BodyPartCode, BodyPartGroupCode, BODY_PART_GROUP_CHILDREN } from '@second-body/shared'
 
 export type BodyGroupCode = Exclude<BodyPartGroupCode, 'body'>
 
@@ -156,7 +156,7 @@ type Rect = { x: number; y: number; w: number; h: number }
  * 앵커(중심점)가 아니라 실제 몸 폭에 맞춰야 좌우 여백 없이 가로가 꽉 찬다.
  * front 는 몸 중심선 기준 미러(flip)해서 사용.
  */
-const GROUP_RECT_AUTHORED: Record<BodyGroupCode, Rect> = {
+export const GROUP_RECT_AUTHORED: Record<BodyGroupCode, Rect> = {
   head_neck: { x: 442, y: 104, w: 121, h: 190 },
   left_arm: { x: 248, y: 296, w: 202, h: 392 },
   right_arm: { x: 555, y: 296, w: 202, h: 392 },
@@ -174,4 +174,17 @@ export function groupZoomRect(group: BodyGroupCode, view: BodyView): Rect {
   if (view === 'back') return { ...r }
   // front: 몸 중심선(x=502.5) 기준 좌우 반전
   return { ...r, x: FLIP_X2 - (r.x + r.w) }
+}
+
+/** 그룹 부위 앵커의 세로 범위 [y0, y1] (해당 view 에 보이는 것만, 패딩 포함) */
+export function groupPartYExtent(group: BodyGroupCode, view: BodyView, pad = 28): [number, number] {
+  const codes = BODY_PART_GROUP_CHILDREN[group] as readonly BodyPartCode[]
+  let y0 = Infinity
+  let y1 = -Infinity
+  for (const p of FIGMA_PARTS) {
+    if (!p.code || !p.anchor || !codes.includes(p.code) || !isVisibleOn(p.code, view)) continue
+    y0 = Math.min(y0, p.anchor.cy - p.anchor.r)
+    y1 = Math.max(y1, p.anchor.cy + p.anchor.r)
+  }
+  return [y0 - pad, y1 + pad]
 }

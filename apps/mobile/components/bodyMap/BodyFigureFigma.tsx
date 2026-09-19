@@ -1,6 +1,6 @@
 import React from 'react'
 import { Platform } from 'react-native'
-import Svg, { Path, Circle, G, Defs, RadialGradient, Stop } from 'react-native-svg'
+import Svg, { Path, Circle, Rect, G, Defs, RadialGradient, Stop } from 'react-native-svg'
 import { BodyPartCode, Severity } from '@second-body/shared'
 import { Colors } from '@/constants/theme'
 import {
@@ -8,9 +8,15 @@ import {
   FIGMA_FLIP,
   BODY_OUTLINE_D,
   FIGMA_PARTS,
+  GROUP_RECT_AUTHORED,
   isVisibleOn,
   BodyView,
+  BodyGroupCode,
 } from './bodyMapFigma'
+
+// TEMP: 그룹 확대 범위 테두리 표시 (확인용). 끌 땐 false
+const DEBUG_GROUP_BOUNDS = true
+const GROUP_DEBUG_COLORS: string[] = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899']
 
 const GLOW_COLOR: Record<Severity, string> = {
   1: '#86efac',
@@ -36,9 +42,12 @@ interface Props {
   viewBox?: string
   /** 앞면/뒷면 (기본 front) */
   view?: BodyView
+  /** groups: 그룹 사각형 탭(줌인) · parts: 부위 원 탭(시트) — 기본 parts */
+  mode?: 'groups' | 'parts'
   severityMap: Partial<Record<BodyPartCode, Severity>>
   selectedCode: BodyPartCode | null
   onSelect: (code: BodyPartCode) => void
+  onSelectGroup?: (group: BodyGroupCode) => void
 }
 
 // 표시 박스 비율은 전체뷰 기준 고정 (viewBox 만 바뀌며 콘텐츠가 줌됨)
@@ -50,9 +59,11 @@ export function BodyFigureFigma({
   height,
   viewBox = FIGMA_VIEW_BOX,
   view = 'front',
+  mode = 'parts',
   severityMap,
   selectedCode,
   onSelect,
+  onSelectGroup,
 }: Props) {
   const svgHeight = height ?? Math.round(width * ASPECT)
   // 뒷면은 원본 좌표(뒤에서 본 방향), 앞면은 몸 중심선 기준 미러
@@ -105,22 +116,53 @@ export function BodyFigureFigma({
             ) : null,
           )}
 
-        {/* 4. 탭 타깃 (해당 view 에 보이는 부위만) */}
-        {FIGMA_PARTS.map((p, i) => {
-          if (!p.code || !p.anchor || !isVisibleOn(p.code, view)) return null
-          const code = p.code
-          return (
-            <Circle
-              key={`tap-${i}`}
-              cx={p.anchor.cx}
-              cy={p.anchor.cy}
-              r={Math.max(p.anchor.r, 12)}
-              fill="transparent"
-              onPress={() => onSelect(code)}
-              {...WEB_CURSOR}
+        {/* 4. 탭 타깃 — groups: 그룹 사각형 전체 / parts: 부위별 원 */}
+        {mode === 'groups'
+          ? (Object.entries(GROUP_RECT_AUTHORED) as [BodyGroupCode, (typeof GROUP_RECT_AUTHORED)[BodyGroupCode]][]).map(
+              ([group, r]) => (
+                <Rect
+                  key={`gtap-${group}`}
+                  x={r.x}
+                  y={r.y}
+                  width={r.w}
+                  height={r.h}
+                  fill="transparent"
+                  onPress={() => onSelectGroup?.(group)}
+                  {...WEB_CURSOR}
+                />
+              ),
+            )
+          : FIGMA_PARTS.map((p, i) => {
+              if (!p.code || !p.anchor || !isVisibleOn(p.code, view)) return null
+              const code = p.code
+              return (
+                <Circle
+                  key={`tap-${i}`}
+                  cx={p.anchor.cx}
+                  cy={p.anchor.cy}
+                  r={Math.max(p.anchor.r, 12)}
+                  fill="transparent"
+                  onPress={() => onSelect(code)}
+                  {...WEB_CURSOR}
+                />
+              )
+            })}
+
+        {/* TEMP: 그룹 확대 범위 테두리 (authored 좌표 → flip G 안이라 뷰에 맞춰 미러됨) */}
+        {DEBUG_GROUP_BOUNDS &&
+          Object.values(GROUP_RECT_AUTHORED).map((r, i) => (
+            <Rect
+              key={`dbg-${i}`}
+              x={r.x}
+              y={r.y}
+              width={r.w}
+              height={r.h}
+              fill="none"
+              stroke={GROUP_DEBUG_COLORS[i % GROUP_DEBUG_COLORS.length]}
+              strokeWidth={2}
+              strokeDasharray="6 4"
             />
-          )
-        })}
+          ))}
       </G>
     </Svg>
   )
