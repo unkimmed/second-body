@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { View, TouchableOpacity, StyleSheet, Animated, LayoutChangeEvent } from 'react-native'
 import { Text } from '@/components/Text'
-import { BodyPartCode, Severity, BODY_PART_TO_GROUP } from '@second-body/shared'
+import { BodyPartCode, Severity } from '@second-body/shared'
 import { BODY_PART_GROUP_LABELS } from '@/constants/symptom'
 import { Colors } from '@/constants/theme'
 import { BodyFigureFigma } from './BodyFigureFigma'
 import { SymptomSheet } from './SymptomSheet'
-import { FULL_RECT, groupZoomRect, BodyGroupCode, BodyView } from './bodyMapFigma'
+import {
+  FULL_RECT,
+  groupZoomRect,
+  groupPartYExtent,
+  BodyGroupCode,
+  BodyView,
+} from './bodyMapFigma'
 
 type Rect = { x: number; y: number; w: number; h: number }
 type Level = 'full' | BodyGroupCode
@@ -51,9 +57,13 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
         }
         return { x, y, w, h }
       }
+      // 몸 폭으로 가로를 채우되(fill-width), 부위 세로범위를 못 담으면 높이를 늘려
+      // 그룹의 모든 부위가 보이도록(=팔·다리처럼 세로로 긴 그룹이 과확대되지 않도록)
       const g = groupZoomRect(lv, vw)
-      const h = g.w / aspWH
-      return { x: g.x, y: g.y + g.h / 2 - h / 2, w: g.w, h }
+      const [y0, y1] = groupPartYExtent(lv, vw)
+      const h = Math.max(g.w / aspWH, y1 - y0)
+      const w = h * aspWH
+      return { x: g.x + g.w / 2 - w / 2, y: (y0 + y1) / 2 - h / 2, w, h }
     },
     [box],
   )
@@ -120,16 +130,9 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
   )
 
   // ── Part tap: L0 → 그룹 줌인, L1 → 증상 시트 ────────────────────────────────
-  const handlePartTap = useCallback(
-    (code: BodyPartCode) => {
-      if (levelRef.current === 'full') {
-        zoomToGroup(BODY_PART_TO_GROUP[code])
-      } else {
-        setSheetCode(code)
-      }
-    },
-    [zoomToGroup],
-  )
+  // L0: 그룹 사각형 탭 → 줌인 / L1: 부위 탭 → 시트
+  const handleGroupTap = useCallback((g: BodyGroupCode) => zoomToGroup(g), [zoomToGroup])
+  const handlePartTap = useCallback((code: BodyPartCode) => setSheetCode(code), [])
 
   // ── Sheet handlers ─────────────────────────────────────────────────────────
   const handleClose = useCallback(() => setSheetCode(null), [])
@@ -213,9 +216,11 @@ export function BodyMapView({ severityMap, noteMap, onSaveSymptom, onResolveSymp
             height={box.h}
             viewBox={viewBox}
             view={view}
+            mode={level === 'full' ? 'groups' : 'parts'}
             severityMap={severityMap}
             selectedCode={sheetCode}
             onSelect={handlePartTap}
+            onSelectGroup={handleGroupTap}
           />
         )}
       </View>
