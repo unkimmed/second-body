@@ -14,10 +14,6 @@ import {
   BodyGroupCode,
 } from './bodyMapFigma'
 
-// TEMP: 그룹 확대 범위 테두리 표시 (확인용). 끌 땐 false
-const DEBUG_GROUP_BOUNDS = true
-const GROUP_DEBUG_COLORS: string[] = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899']
-
 const GLOW_COLOR: Record<Severity, string> = {
   1: '#86efac',
   2: '#bef264',
@@ -148,21 +144,6 @@ export function BodyFigureFigma({
               )
             })}
 
-        {/* TEMP: 그룹 확대 범위 테두리 (authored 좌표 → flip G 안이라 뷰에 맞춰 미러됨) */}
-        {DEBUG_GROUP_BOUNDS &&
-          Object.values(GROUP_RECT_AUTHORED).map((r, i) => (
-            <Rect
-              key={`dbg-${i}`}
-              x={r.x}
-              y={r.y}
-              width={r.w}
-              height={r.h}
-              fill="none"
-              stroke={GROUP_DEBUG_COLORS[i % GROUP_DEBUG_COLORS.length]}
-              strokeWidth={2}
-              strokeDasharray="6 4"
-            />
-          ))}
       </G>
     </Svg>
   )
