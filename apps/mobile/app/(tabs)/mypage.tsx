@@ -121,13 +121,15 @@ export default function MyPageScreen() {
         ) : (
           <View className="flex-row flex-wrap gap-2">
             {activeParts.map((p) => (
-              <View
+              <TouchableOpacity
                 key={p.code}
+                onPress={() => router.push(`/parts/${p.code}`)}
+                activeOpacity={0.7}
                 className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-low border border-outline-variant"
               >
                 <View className={`w-2 h-2 rounded-full ${SEVERITY_COLOR[p.severity]}`} />
                 <Text className="text-xs text-on-surface">{BODY_PART_LABELS[p.code]}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}

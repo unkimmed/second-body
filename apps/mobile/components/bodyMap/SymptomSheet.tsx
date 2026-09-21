@@ -11,6 +11,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native'
+import { useRouter } from 'expo-router'
 import { Text } from '@/components/Text'
 import { BodyPartCode, Severity } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_LABELS } from '@/constants/symptom'
@@ -64,6 +65,7 @@ export function SymptomSheet({
   onResolve,
   onClose,
 }: Props) {
+  const router = useRouter()
   const [severity, setSeverity] = useState<Severity | null>(initialSeverity ?? null)
   const [note, setNote] = useState(initialNote ?? '')
   const [saving, setSaving] = useState(false)
@@ -145,7 +147,15 @@ export function SymptomSheet({
           <View style={styles.header}>
             <View>
               <Text style={styles.partName}>{partLabel}</Text>
-              <Text style={styles.subTitle}>증상 강도를 선택해 주세요</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  onClose()
+                  router.push(`/parts/${partCode}`)
+                }}
+                hitSlop={8}
+              >
+                <Text style={styles.historyLink}>이 부위 기록 보기 →</Text>
+              </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={onClose} hitSlop={12} style={styles.closeBtn}>
               <Text style={styles.closeText}>✕</Text>
@@ -273,6 +283,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.onSurfaceVariant,
     marginTop: 2,
+  },
+  historyLink: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '600',
+    marginTop: 4,
   },
   closeBtn: {
     padding: 4,
