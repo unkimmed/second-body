@@ -24,9 +24,10 @@ pnpm mobile:web      # Expo web dev server (http://localhost:8081)
 pnpm api             # NestJS API in watch mode
 pnpm api:build       # Build API for production
 pnpm shared:build    # Compile shared package (run after changes, before apps can pick them up)
+pnpm shared:test     # Run shared package tests (vitest)
 ```
 
-There are no test or lint scripts configured yet.
+Only `packages/shared` has tests. There is no lint script.
 
 ## Local-first migration
 
@@ -45,7 +46,7 @@ Decision doc: https://claude.ai/artifact/7g6W4LSyhX3kykPo5FMyKd
 
 ### Vault format invariants
 
-`packages/shared/src/types/vault.ts` is the source of truth; read it before changing record handling.
+`packages/shared/src/types/vault.ts` (types) and `packages/shared/src/vault/` (logic and tests) are the source of truth; read them before changing record handling. Existing Supabase data is not migrated.
 
 - One symptom record = one file, `records/<uuidv7>.json`. Its header (`id`, `record_date`, `body_part_code`, `created_at`) never changes.
 - Every change is appended to `events` (`update` / `resolve` / `reopen` / `delete`). Never edit or remove events.
