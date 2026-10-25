@@ -4,82 +4,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Second Body** is a health symptom tracking app — a TypeScript monorepo with a React Native (Expo) mobile app, a NestJS REST API backend, and a shared types package.
+**Second Body** is a health symptom tracking app. It is a `pnpm` workspace monorepo with three packages:
+
+- `apps/mobile`: the Expo app (React Native for mobile, Expo Web for web)
+- `apps/api`: a NestJS API
+- `packages/shared`: shared types and constants
+
+**Direction (decided 2026-10-25): moving to Obsidian-style local-first storage.** Records will live as JSON files on the user's device, not in Supabase. The current code still uses Supabase + NestJS while the migration is in progress. Don't build new features on Supabase, the API or the DB.
 
 ## Commands
 
 All commands are run from the repo root using `pnpm`.
 
 ```bash
-# Start dev servers
 pnpm mobile          # Expo dev server (React Native)
 pnpm mobile:ios      # Run on iOS simulator
 pnpm mobile:android  # Run on Android emulator
 pnpm mobile:web      # Expo web dev server (http://localhost:8081)
 pnpm api             # NestJS API in watch mode
-pnpm shared:build    # Compile shared TypeScript package
-
-# Build
 pnpm api:build       # Build API for production
+pnpm shared:build    # Compile shared package (run after changes, before apps can pick them up)
 ```
 
 There are no test or lint scripts configured yet.
 
-## Architecture
+## Local-first migration
 
-This is a `pnpm` workspace monorepo with three packages:
+Decision doc: https://claude.ai/artifact/7g6W4LSyhX3kykPo5FMyKd
 
-- `apps/api` — NestJS backend
-- `apps/mobile` — Expo React Native frontend
-- `packages/shared` — Shared TypeScript types only (no runtime code)
+- **Platforms (one Expo codebase)**: mobile = React Native, web = Expo Web, desktop = the Expo Web build wrapped in Electron. Widgets come later via `expo-widgets`, which needs Expo SDK 56+ (the repo is on SDK 54).
+- **Storage**: one JSON file per symptom record, plus a local index that can be rebuilt from the files at any time.
+  - The index starts in memory; `expo-sqlite` comes later.
+  - Originals: mobile = app storage, web = OPFS / IndexedDB, desktop = a folder the user picks.
+- **Sync is optional**:
+  1. Local-only (default).
+  2. Folder sync through the user's own iCloud Drive or Dropbox.
+  3. Later: an E2EE sync server, only for web or mixed-OS use.
+- **`packages/shared`** will grow into platform-independent logic: record format, merge, crypto, sync, and the storage adapter interface. Storage adapters are per platform.
+- **Swap point**: the app touches data only through `apps/mobile/app/api/records.ts` (records, via the API) and `apps/mobile/lib/profile.ts` (profile, via Supabase). The migration replaces these two files' implementations.
 
-### Data Flow
+### Vault format invariants
 
-```
-Mobile App (React Native)
-  ├─ Supabase JS client (anon key, AsyncStorage sessions)
-  └─ fetch API → NestJS API (x-user-id header)
-          └─ Supabase service (service_role key, bypasses RLS)
-                  └─ PostgreSQL (Supabase)
-```
+`packages/shared/src/types/vault.ts` is the source of truth; read it before changing record handling.
 
-### API (`apps/api/src/`)
-
-NestJS modules with a standard Controller → Service → Supabase pattern:
-
-- `app.module.ts` — Wires `ConfigModule`, `SupabaseModule`, `RecordsModule`, `BodyPartsModule`
-- `supabase/` — Global `SupabaseService` using `service_role` key
-- `records/` — CRUD endpoints at `/api/records`, with DTOs validated by `class-validator`
-- `body-parts/` — Read-only endpoint at `/api/body-parts` (body_parts master table)
-- Global route prefix `/api`, CORS enabled
-
-### Mobile App (`apps/mobile/app/`)
-
-File-based routing via Expo Router (similar to Next.js):
-
-- `index.tsx` — Home screen, lists symptoms
-- `symptoms/new.tsx` — Create symptom form
-- `symptoms/[id].tsx` — Detail/edit view
-- `components/SymptomCard.tsx` — Reusable symptom card
-- `lib/supabase.ts` — Supabase client (anon key + AsyncStorage)
-- `constants/symptom.ts` — `BODY_PART_LABELS` and `SEVERITY_COLOR` mappings
-- Styling via NativeWind (Tailwind CSS for React Native), custom primary color `#6366f1`
-
-### Shared Types (`packages/shared/src/types/symptom.ts`)
-
-Defines `BodyPartCode` (26 body part codes), `Severity`, `BodyPart`, `SymptomDetail`, `SymptomRecord`, `CreateSymptomDetailDto`, `CreateSymptomRecordDto`, `UpdateSymptomRecordDto`. Must run `pnpm shared:build` after changes before the other apps can pick them up.
-
-### Database
-
-Schema lives in `supabase/schema.sql`. Tables:
-
-- `body_parts` — Master table of 26 body part codes (seed data, read-only)
-- `users` — App-specific user profile, 1:1 with `auth.users`
-- `avatars` — One avatar per user (skin_tone, gender)
-- `symptom_records` — Daily record header; unique `(user_id, record_date)`
-- `symptom_details` — Per-body-part symptom within a record (body_part_code FK → body_parts, severity 1–5)
-
-RLS is enabled on all tables. API uses `service_role` key (bypasses RLS server-side).
+- One symptom record = one file, `records/<uuidv7>.json`. Its header (`id`, `record_date`, `body_part_code`, `created_at`) never changes.
+- Every change is appended to `events` (`update` / `resolve` / `reopen` / `delete`). Never edit or remove events.
+- Merge = the union of events by `id`, sorted by `(at, id)`. Current state is derived from the events and never stored.
+- Timestamps are UTC ISO (`toISOString()`). Only `record_date` is a local `YYYY-MM-DD`. Field names are snake_case.
 
 ## Environment Variables
 
@@ -94,16 +65,10 @@ RLS is enabled on all tables. API uses `service_role` key (bypasses RLS server-s
 
 ## pnpm + Expo Web Gotchas
 
-Web support requires `react-dom`, `react-native-web` in `apps/mobile/package.json`. Due to pnpm's strict isolation, expo-router's SSR renderer can't find packages it doesn't explicitly declare. Workarounds in place:
+Web support requires `react-dom` and `react-native-web` in `apps/mobile/package.json`. Because pnpm isolates packages strictly, expo-router's SSR renderer can't find packages it doesn't explicitly declare. These workarounds are in place:
 
-- `package.json` root has `pnpm.packageExtensions` that adds missing peer deps to `expo-router` (`react-dom`, `escape-string-regexp`)
-- `apps/mobile/metro.config.js` has `extraNodeModules` pointing `react-dom` to the local install
-- `.npmrc` has `public-hoist-pattern[]=react-dom`
+- The root `package.json` has `pnpm.packageExtensions`, which adds missing peer deps to `expo-router` (`react-dom`, `escape-string-regexp`).
+- `apps/mobile/metro.config.js` has `extraNodeModules` pointing `react-dom` to the local install.
+- `.npmrc` has `public-hoist-pattern[]=react-dom`.
 
-If adding new dependencies that expo-router's node renderer needs, add them to `pnpm.packageExtensions["expo-router"].peerDependencies` in root `package.json` and re-run `pnpm install`.
-
-## Known Limitations
-
-- **Auth is temporary**: Mobile hardcodes `TEMP_USER_ID = 'user-001'` and sends it as `x-user-id` header; real JWT auth is not yet implemented
-- **RLS enabled**: Supabase Row Level Security is active; API bypasses it via `service_role` key
-- No tests or linting configured
+If you add new dependencies that expo-router's node renderer needs, add them to `pnpm.packageExtensions["expo-router"].peerDependencies` in the root `package.json` and re-run `pnpm install`.
