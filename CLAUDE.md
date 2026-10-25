@@ -36,13 +36,14 @@ Decision doc: https://claude.ai/artifact/7g6W4LSyhX3kykPo5FMyKd
 - **Platforms (one Expo codebase)**: mobile = React Native, web = Expo Web, desktop = the Expo Web build wrapped in Electron. Widgets come later via `expo-widgets`, which needs Expo SDK 56+ (the repo is on SDK 54).
 - **Storage**: one JSON file per symptom record, plus a local index that can be rebuilt from the files at any time.
   - The index starts in memory; `expo-sqlite` comes later.
-  - Originals: mobile = app storage, web = OPFS / IndexedDB, desktop = a folder the user picks.
+  - Originals: mobile = app storage (`expo-file-system`), web = IndexedDB, desktop = a folder the user picks.
 - **Sync is optional**:
   1. Local-only (default).
   2. Folder sync through the user's own iCloud Drive or Dropbox.
   3. Later: an E2EE sync server, only for web or mixed-OS use.
 - **`packages/shared`** will grow into platform-independent logic: record format, merge, crypto, sync, and the storage adapter interface. Storage adapters are per platform.
-- **Swap point**: the app touches data only through `apps/mobile/app/api/records.ts` (records, via the API) and `apps/mobile/lib/profile.ts` (profile, via Supabase). The migration replaces these two files' implementations.
+- **Done so far**: records and profile are read and written locally. Screens go through `apps/mobile/app/api/records.ts` and `apps/mobile/lib/profile.ts`. Those call `vault` in `apps/mobile/lib/vault/`, which is `createVault()` from shared plus a platform adapter: `storage.native.ts` for iOS/Android, `storage.ts` for web.
+- **Still on Supabase**: login/signup (`lib/AuthContext.tsx`) and the profile email. The NestJS API and `lib/config.ts` are no longer used by the app.
 
 ### Vault format invariants
 

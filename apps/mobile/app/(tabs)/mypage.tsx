@@ -4,7 +4,7 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
-import { BodyPartCode, Severity, SymptomRecord } from '@second-body/shared'
+import { BodyPartCode, Severity, DerivedRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
 import { useAuth } from '@/lib/AuthContext'
 import { fetchProfile, Profile } from '@/lib/profile'
@@ -21,7 +21,7 @@ interface Summary {
 }
 
 /** 같은 부위에 미해결 기록이 여러 개면 가장 최근 것 우선 */
-function byRecency(a: SymptomRecord, b: SymptomRecord) {
+function byRecency(a: DerivedRecord, b: DerivedRecord) {
   return b.record_date.localeCompare(a.record_date) || b.created_at.localeCompare(a.created_at)
 }
 
@@ -39,7 +39,7 @@ export default function MyPageScreen() {
       let alive = true
       ;(async () => {
         try {
-          const [p, records] = await Promise.all([fetchProfile(userId), fetchRecords()])
+          const [p, records] = await Promise.all([fetchProfile(), fetchRecords()])
           if (!alive) return
           setProfile(p)
 

@@ -113,6 +113,20 @@ describe('이벤트 추가', () => {
   })
 })
 
+describe('부위 변경', () => {
+  it('update 로 부위를 바꾸면 현재 부위가 바뀌고 머리 정보는 처음 부위로 남는다', () => {
+    const file = appendUpdate(baseRecord(), { body_part_code: 'neck', severity: 3 }, t('10:00'))
+    expect(deriveRecord(file)!.body_part_code).toBe('neck')
+    expect(file.body_part_code).toBe('head')
+  })
+
+  it('부위를 생략하면 현재 부위를 유지한다', () => {
+    let file = appendUpdate(baseRecord(), { body_part_code: 'neck', severity: 3 }, t('10:00'))
+    file = appendUpdate(file, { severity: 5 }, t('11:00'))
+    expect(deriveRecord(file)).toMatchObject({ body_part_code: 'neck', severity: 5 })
+  })
+})
+
 describe('mergeRecord', () => {
   it('iPhone 해결 + Mac 강도 수정 → 둘 다 남는다', () => {
     const base = baseRecord()
@@ -181,7 +195,29 @@ describe('직렬화 / 검증', () => {
       'severity',
       {
         events: [
-          { id: 'e', at: '2026-10-25T09:00:00.000Z', type: 'update', severity: 6, note: null },
+          {
+            id: 'e',
+            at: '2026-10-25T09:00:00.000Z',
+            type: 'update',
+            body_part_code: 'head',
+            severity: 6,
+            note: null,
+          },
+        ],
+      },
+    ],
+    [
+      'event body_part_code',
+      {
+        events: [
+          {
+            id: 'e',
+            at: '2026-10-25T09:00:00.000Z',
+            type: 'update',
+            body_part_code: 'tail',
+            severity: 3,
+            note: null,
+          },
         ],
       },
     ],

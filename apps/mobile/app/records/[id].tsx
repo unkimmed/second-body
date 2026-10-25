@@ -3,7 +3,7 @@ import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { BodyPartCode, Severity, SymptomRecord } from '@second-body/shared'
+import { BodyPartCode, Severity, DerivedRecord } from '@second-body/shared'
 import { SEVERITY_COLOR } from '@/constants/symptom'
 import { useAuth } from '@/lib/AuthContext'
 import { fetchRecord, deleteRecord, patchRecord, resolveRecord } from '../api/records'
@@ -23,7 +23,7 @@ export default function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const { userId } = useAuth()
-  const [record, setRecord] = useState<SymptomRecord | null>(null)
+  const [record, setRecord] = useState<DerivedRecord | null>(null)
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -101,17 +101,12 @@ export default function RecordDetailScreen() {
     }
     setDeleting(true)
     try {
-      const res = await deleteRecord(id)
-      if (!res.ok) {
-        const text = await res.text().catch(() => '')
-        setErrorMessage(`삭제 실패 (${res.status}): ${text || '원인 불명'}`)
-        return
-      }
+      await deleteRecord(id)
       setConfirmOpen(false)
       router.back()
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      setErrorMessage(`네트워크 오류: ${msg}`)
+      setErrorMessage(`삭제 실패: ${msg}`)
     } finally {
       setDeleting(false)
     }
