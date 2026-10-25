@@ -37,6 +37,7 @@ export function createRecordFile(
         id: uuidv7(now.getTime()),
         at,
         type: 'update',
+        body_part_code: input.body_part_code,
         severity: input.severity,
         note: input.note || null,
       },
@@ -44,15 +45,18 @@ export function createRecordFile(
   }
 }
 
+/** body_part_code 를 생략하면 현재 부위를 유지한다 */
 export function appendUpdate(
   file: RecordFile,
-  input: { severity: Severity; note?: string | null },
+  input: { body_part_code?: BodyPartCode; severity: Severity; note?: string | null },
   now: Date = new Date(),
 ): RecordFile {
   return withEvent(file, {
     id: uuidv7(now.getTime()),
     at: now.toISOString(),
     type: 'update',
+    body_part_code:
+      input.body_part_code ?? deriveState(file).last?.body_part_code ?? file.body_part_code,
     severity: input.severity,
     note: input.note || null,
   })
@@ -103,7 +107,7 @@ function deriveState(file: RecordFile) {
 
 /**
  * events 에서 현재 상태를 계산한다. 삭제된 기록이면 null.
- * - severity, note: 마지막 update
+ * - body_part_code, severity, note: 마지막 update
  * - resolved_at: resolve/reopen 중 마지막 (resolve 뒤 update 가 와도 해결 유지)
  * - updated_at: 마지막 이벤트 시각
  */
@@ -114,7 +118,7 @@ export function deriveRecord(file: RecordFile): DerivedRecord | null {
   return {
     id: file.id,
     record_date: file.record_date,
-    body_part_code: file.body_part_code,
+    body_part_code: last.body_part_code,
     severity: last.severity,
     note: last.note ?? undefined,
     resolved_at,
@@ -123,26 +127,38 @@ export function deriveRecord(file: RecordFile): DerivedRecord | null {
   }
 }
 
-/** 강도·메모 변경 이력 (시간순). 강도 추이 표시용 */
-export function severityHistory(
-  file: RecordFile,
-): { at: string; severity: Severity; note: string | null }[] {
+/** 부위·강도·메모 변경 이력 (시간순). 강도 추이 표시용 */
+export function severityHistory(file: RecordFile): {
+  at: string
+  body_part_code: BodyPartCode
+  severity: Severity
+  note: string | null
+}[] {
   return [...file.events]
     .sort(compareEvents)
-    .flatMap((e) => (e.type === 'update' ? [{ at: e.at, severity: e.severity, note: e.note }] : []))
+    .flatMap((e) =>
+      e.type === 'update'
+        ? [{ at: e.at, body_part_code: e.body_part_code, severity: e.severity, note: e.note }]
+        : [],
+    )
 }
 
 // ---- 직렬화 / 검증 ----
 
 /** 키 순서를 고정해 직렬화한다. 같은 내용이면 항상 같은 문자열이 나온다. */
 export function serializeRecordFile(file: RecordFile): string {
-  const events = [...file.events]
-    .sort(compareEvents)
-    .map((e) =>
-      e.type === 'update'
-        ? { id: e.id, at: e.at, type: e.type, severity: e.severity, note: e.note }
-        : { id: e.id, at: e.at, type: e.type },
-    )
+  const events = [...file.events].sort(compareEvents).map((e) =>
+    e.type === 'update'
+      ? {
+          id: e.id,
+          at: e.at,
+          type: e.type,
+          body_part_code: e.body_part_code,
+          severity: e.severity,
+          note: e.note,
+        }
+      : { id: e.id, at: e.at, type: e.type },
+  )
   const ordered = {
     schema_version: file.schema_version,
     id: file.id,
@@ -166,7 +182,10 @@ function parseEvent(v: unknown, where: string): RecordEvent {
   const { id, at, type } = v
   if (typeof id !== 'string' || typeof at !== 'string') throw new Error(`${where}: id/at 누락`)
   if (type === 'update') {
-    const { severity, note } = v
+    const { body_part_code, severity, note } = v
+    if (typeof body_part_code !== 'string' || !BODY_PART_SET.has(body_part_code)) {
+      throw new Error(`${where}: 알 수 없는 body_part_code`)
+    }
     if (
       typeof severity !== 'number' ||
       !Number.isInteger(severity) ||
@@ -176,7 +195,14 @@ function parseEvent(v: unknown, where: string): RecordEvent {
       throw new Error(`${where}: severity 는 1~5 정수여야 합니다`)
     }
     if (note !== null && typeof note !== 'string') throw new Error(`${where}: note 형식 오류`)
-    return { id, at, type, severity: severity as Severity, note }
+    return {
+      id,
+      at,
+      type,
+      body_part_code: body_part_code as BodyPartCode,
+      severity: severity as Severity,
+      note,
+    }
   }
   if (type === 'resolve' || type === 'reopen' || type === 'delete') return { id, at, type }
   throw new Error(`${where}: 알 수 없는 이벤트 type (${String(type)})`)

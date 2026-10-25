@@ -32,11 +32,12 @@ export interface ProfileFile {
   updated_at: string
 }
 
-/** 강도·메모 변경. 기록 생성 시 첫 이벤트도 update 이다. */
+/** 부위·강도·메모 변경. 기록 생성 시 첫 이벤트도 update 이다. */
 export interface RecordUpdateEvent {
   id: string
   at: string
   type: 'update'
+  body_part_code: BodyPartCode
   severity: Severity
   note: string | null
 }
@@ -71,10 +72,11 @@ export type RecordEvent =
 /**
  * 증상 기록 하나 = 파일 하나. 머리 정보(id ~ created_at)는 생성 후 바뀌지 않고,
  * 이후 변경은 전부 events 에 추가만 한다(수정·삭제 금지).
+ * 머리의 body_part_code 는 처음 기록한 부위이고, 현재 부위는 events 에서 계산한다.
  *
  * 병합: 두 사본의 events 를 id 기준 합집합 → (at, id) 순 정렬. 그 외 규칙 없음.
  * 현재 상태는 events 에서 계산한다.
- * - severity, note: 마지막 update
+ * - body_part_code, severity, note: 마지막 update
  * - resolved_at: resolve/reopen 중 마지막이 resolve 면 그 at, 아니면 null
  *   (resolve 뒤에 update 가 와도 해결 상태는 유지된다. 다시 진행중으로 돌리려면 reopen)
  * - deleted: delete 가 하나라도 있으면 true

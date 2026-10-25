@@ -1,10 +1,10 @@
 import { View, TouchableOpacity } from 'react-native'
 import { Text } from './Text'
-import { SymptomRecord } from '@second-body/shared'
+import { DerivedRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_LABELS } from '../constants/symptom'
 
 interface Props {
-  record: SymptomRecord
+  record: DerivedRecord
   onPress: () => void
   onResolve?: (resolved: boolean) => void
 }

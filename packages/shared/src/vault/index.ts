@@ -1,3 +1,6 @@
 export * from './uuid'
 export * from './record'
+export * from './files'
 export * from './storage'
+export * from './memory-storage'
+export * from './vault'

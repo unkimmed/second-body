@@ -4,7 +4,7 @@ import { Text } from '@/components/Text'
 import { useRouter } from 'expo-router'
 import { useCallback, useMemo, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
-import { SymptomRecord, BodyPartCode, Severity } from '@second-body/shared'
+import { DerivedRecord, BodyPartCode, Severity } from '@second-body/shared'
 import { Colors } from '@/constants/theme'
 import { useAuth } from '@/lib/AuthContext'
 import { BodyMapView } from '@/components/bodyMap'
@@ -15,7 +15,7 @@ function todayString() {
 }
 
 /** 같은 부위에 미해결 기록이 여러 개면 가장 최근 것을 우선 */
-function byRecency(a: SymptomRecord, b: SymptomRecord) {
+function byRecency(a: DerivedRecord, b: DerivedRecord) {
   return b.record_date.localeCompare(a.record_date) || b.created_at.localeCompare(a.created_at)
 }
 
@@ -23,7 +23,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { userId } = useAuth()
-  const [records, setRecords] = useState<SymptomRecord[]>([])
+  const [records, setRecords] = useState<DerivedRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   useFocusEffect(
@@ -70,13 +70,12 @@ export default function HomeScreen() {
       const existing = findActive(code)
       try {
         if (!existing) {
-          const res = await createRecord({
+          const created = await createRecord({
             record_date: todayString(),
             body_part_code: code,
             severity,
             note: note || undefined,
           })
-          const created = (await res.json()) as SymptomRecord
           setRecords((prev) => [created, ...prev])
         } else {
           const updated = await patchRecord(existing.id, {

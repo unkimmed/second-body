@@ -5,7 +5,7 @@ import { Colors } from '@/constants/theme'
 import { useRouter } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
-import { SymptomRecord } from '@second-body/shared'
+import { DerivedRecord } from '@second-body/shared'
 import { useAuth } from '@/lib/AuthContext'
 import { fetchRecords, resolveRecord } from '../api/records'
 import { RecordCard } from '@/components/RecordCard'
@@ -14,7 +14,7 @@ export default function RecordsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { userId } = useAuth()
-  const [records, setRecords] = useState<SymptomRecord[]>([])
+  const [records, setRecords] = useState<DerivedRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   useFocusEffect(

@@ -3,12 +3,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
-import { BodyPartCode, SymptomRecord } from '@second-body/shared'
+import { BodyPartCode, DerivedRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/symptom'
 import { useAuth } from '@/lib/AuthContext'
 import { fetchRecords } from '@/app/api/records'
 
-function byDateDesc(a: SymptomRecord, b: SymptomRecord) {
+function byDateDesc(a: DerivedRecord, b: DerivedRecord) {
   return b.record_date.localeCompare(a.record_date) || b.created_at.localeCompare(a.created_at)
 }
 
@@ -17,7 +17,7 @@ export default function PartHistoryScreen() {
   const router = useRouter()
   const { userId } = useAuth()
   const partCode = code as BodyPartCode
-  const [records, setRecords] = useState<SymptomRecord[]>([])
+  const [records, setRecords] = useState<DerivedRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

@@ -50,23 +50,16 @@ export default function NewRecordScreen() {
 
     setSubmitting(true)
     try {
-      const res = await createRecord({
+      await createRecord({
         record_date: recordDate,
         body_part_code: bodyPartCode,
         severity,
         note: note || undefined,
       })
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => '')
-        setErrorMessage(`저장 실패 (${res.status}): ${text || '원인 불명'}`)
-        return
-      }
-
       router.navigate('/')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      setErrorMessage(`네트워크 오류: ${msg}`)
+      setErrorMessage(`저장 실패: ${msg}`)
     } finally {
       setSubmitting(false)
     }

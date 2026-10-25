@@ -34,7 +34,7 @@ export default function ProfileEditScreen() {
 
   useEffect(() => {
     if (!userId) return
-    fetchProfile(userId)
+    fetchProfile()
       .then((p) => {
         setName(p.name)
         setAvatarName(p.avatarName)
@@ -54,7 +54,7 @@ export default function ProfileEditScreen() {
     setError(null)
     setSaving(true)
     try {
-      await updateProfile(userId, { name: name.trim(), avatarName: avatarName.trim(), skinTone, gender })
+      await updateProfile({ name: name.trim(), avatarName: avatarName.trim(), skinTone, gender })
       router.back()
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)

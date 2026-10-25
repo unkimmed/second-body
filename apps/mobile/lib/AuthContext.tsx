@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { vault } from './vault'
 import { AvatarGender } from '@second-body/shared'
 
 interface AuthContextValue {
@@ -60,6 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
     if (error) throw error
     if (!data.user) throw new Error('가입에 실패했습니다.')
+
+    // 프로필은 로컬 vault 에 저장 (앱은 이것만 읽는다)
+    await vault.saveProfile({ name, avatar_name: avatarName, skin_tone: 'medium', gender })
 
     // 이메일 인증이 비활성화된 경우 즉시 세션 발급 → 프로필 생성 가능
     if (data.session) {
