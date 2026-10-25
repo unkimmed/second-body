@@ -72,7 +72,7 @@ function JsBottomTabNavigator({ initialRouteName, children, screenOptions }: any
             {displayTabs.map((route: any) => {
               const isCenter = route.name === CENTER_TAB
               const isFocused = isHome ? isCenter : state.routes[state.index].key === route.key
-              const iconColor = isFocused ? Colors.primary : '#c0c4c8'
+              const iconColor = isFocused ? Colors.primary : Colors.outlineVariant
               const { name, size } = getIcon(route.name, isCenter, isHome, isFocused)
 
               return (
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   tabFocused: {
-    backgroundColor: 'rgba(69, 99, 115, 0.1)',
+    backgroundColor: 'rgba(26, 26, 26, 0.06)',
   },
   tabCenter: {
     flex: 1.2,

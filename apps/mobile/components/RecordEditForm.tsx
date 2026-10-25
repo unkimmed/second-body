@@ -1,7 +1,7 @@
 import { View, TextInput, TouchableOpacity } from 'react-native'
 import { Text } from '@/components/Text'
 import { BodyPartCode, Severity } from '@second-body/shared'
-import { SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/symptom'
+import { SEVERITY_COLOR, SEVERITY_LABELS, SEVERITY_TEXT_COLOR } from '@/constants/symptom'
 import { BodyPartSelector } from '@/components/BodyPartSelector'
 
 type Props = {
@@ -44,7 +44,7 @@ export function RecordEditForm({
               <Text
                 className={
                   severity === s
-                    ? 'text-surface font-bold text-sm'
+                    ? `${SEVERITY_TEXT_COLOR[s]} font-bold text-sm`
                     : 'text-on-surface-variant text-sm'
                 }
               >

@@ -9,40 +9,58 @@
 
 export const Colors = {
   // Surface hierarchy (stacked vellum layers)
-  surface: '#f9f8f8', // Base — the foundation of the sanctuary
-  surfaceContainerLow: '#ededed', // Secondary content sections
-  surfaceContainerLowest: '#ffffff', // Interactive cards — pops against cream base
-  surfaceContainer: '#f0f0f0', // Mid-level container
-  surfaceContainerHigh: '#e9e8e3', // Nested elements (search bars, toggle backgrounds)
+  surface: '#fafafa', // Base — the foundation of the sanctuary
+  surfaceContainerLow: '#f0f0f0', // Secondary content sections
+  surfaceContainerLowest: '#ffffff', // Interactive cards — pops against base
+  surfaceContainer: '#f4f4f4', // Mid-level container
+  surfaceContainerHigh: '#e8e8e8', // Nested elements (search bars, toggle backgrounds)
 
   // Primary accent
-  primary: '#456373', // Muted blue for focus and action
-  primaryDim: '#395767', // Gradient endpoint — deep, slightly darker
+  primary: '#1a1a1a', // Near-black for focus and action
+  primaryDim: '#000000', // Gradient endpoint — deep, slightly darker
 
   // On-surface (text/icon)
-  onSurface: '#31332f', // Default text — never 100% black
-  onSurfaceVariant: '#5e605b', // Soft secondary text (section headlines)
+  onSurface: '#1a1a1a', // Default text — never 100% black
+  onSurfaceVariant: '#6b6b6b', // Soft secondary text (section headlines)
 
   // Outline
-  outlineVariant: '#b2b2ac', // At 15% opacity for ghost borders only
+  outlineVariant: '#c4c4c4', // At 15% opacity for ghost borders only
 
   // Semantic aliases
   text: {
-    primary: '#31332f',
-    secondary: '#5e605b',
-    muted: 'rgba(93, 96, 91, 0.6)',
-    inverse: '#fbf9f5',
-    accent: '#456373',
+    primary: '#1a1a1a',
+    secondary: '#6b6b6b',
+    muted: 'rgba(107, 107, 107, 0.6)',
+    inverse: '#fafafa',
+    accent: '#1a1a1a',
   },
 
   // Glass overlay (surface at 80% opacity)
-  glass: 'rgba(251, 249, 245, 0.80)',
+  glass: 'rgba(250, 250, 250, 0.80)',
 
   // Shadow tone (on-surface @ 6% opacity)
-  shadowTone: 'rgba(49, 51, 47, 0.06)',
+  shadowTone: 'rgba(26, 26, 26, 0.06)',
 
   // Ghost border (outline-variant @ 15% opacity)
-  ghostBorder: 'rgba(178, 178, 172, 0.15)',
+  ghostBorder: 'rgba(196, 196, 196, 0.15)',
+} as const
+
+/** Severity 1→5 — muted red, saturation/depth increases (keep in sync with tailwind `severity-*`) */
+export const SeverityColor = {
+  1: '#ecd3d0',
+  2: '#dfaaa5',
+  3: '#cf7f78',
+  4: '#bb554d',
+  5: '#9e3029',
+} as const
+
+/** Text color on a filled severity chip — light levels need dark text */
+export const SeverityOnColor = {
+  1: '#1a1a1a',
+  2: '#1a1a1a',
+  3: '#fafafa',
+  4: '#fafafa',
+  5: '#fafafa',
 } as const
 
 // ---------------------------------------------------------------------------

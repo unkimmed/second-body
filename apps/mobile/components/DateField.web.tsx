@@ -15,12 +15,12 @@ export function DateField({ value, onChange }: Props) {
       style={{
         borderWidth: 1,
         borderStyle: 'solid',
-        borderColor: '#b2b2ac',
+        borderColor: '#c4c4c4',
         borderRadius: 12,
         padding: '12px 16px',
         fontSize: 16,
-        color: '#31332f',
-        backgroundColor: '#ededed',
+        color: '#1a1a1a',
+        backgroundColor: '#f0f0f0',
         width: '100%',
         boxSizing: 'border-box',
       }}

@@ -9,22 +9,16 @@ import {
   SVG_DISPLAY_H,
   getVisibleZones,
 } from './bodyPartZones'
-import { Colors } from '@/constants/theme'
+import { Colors, SeverityColor } from '@/constants/theme'
 
-// ─── Glow colours (severity 1→5, green→red spectrum, matches severity chips) ──
-const GLOW_COLOR: Record<Severity, string> = {
-  1: '#86efac',
-  2: '#bef264',
-  3: '#fde047',
-  4: '#fb923c',
-  5: '#ef4444',
-}
+// ─── Glow colours (severity 1→5, matches severity chips) ──
+const GLOW_COLOR: Record<Severity, string> = SeverityColor
 // 후광이 부위보다 얼마나 넓게 번질지
 const GLOW_SCALE = 1.9
 
-const BODY_FILL = '#f5ede8' // warm skin silhouette
-const ZONE_FILL = 'rgba(69,99,115,0.06)' // near-invisible default (tap affordance)
-const ZONE_STROKE = 'rgba(69,99,115,0.15)' // subtle border
+const BODY_FILL = '#ededed' // neutral silhouette
+const ZONE_FILL = 'rgba(26,26,26,0.04)' // near-invisible default (tap affordance)
+const ZONE_STROKE = 'rgba(26,26,26,0.12)' // subtle border
 const SEL_STROKE = Colors.primary // selected highlight
 
 // ─── Shape helpers ───────────────────────────────────────────────────────────

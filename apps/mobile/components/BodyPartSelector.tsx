@@ -20,7 +20,7 @@ const GROUP_ORDER: GroupCode[] = [
   'right_leg',
 ]
 
-const PLACEHOLDER_COLOR = '#9ca3af'
+const PLACEHOLDER_COLOR = '#9e9e9e'
 
 type Props = {
   value: BodyPartCode | null

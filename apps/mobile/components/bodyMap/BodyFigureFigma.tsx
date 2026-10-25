@@ -2,7 +2,7 @@ import React from 'react'
 import { Platform } from 'react-native'
 import Svg, { Path, Circle, Rect, G, Defs, RadialGradient, Stop } from 'react-native-svg'
 import { BodyPartCode, Severity } from '@second-body/shared'
-import { Colors } from '@/constants/theme'
+import { Colors, SeverityColor } from '@/constants/theme'
 import {
   FIGMA_VIEW_BOX,
   FIGMA_FLIP,
@@ -14,16 +14,10 @@ import {
   BodyGroupCode,
 } from './bodyMapFigma'
 
-const GLOW_COLOR: Record<Severity, string> = {
-  1: '#86efac',
-  2: '#bef264',
-  3: '#fde047',
-  4: '#fb923c',
-  5: '#ef4444',
-}
+const GLOW_COLOR: Record<Severity, string> = SeverityColor
 const GLOW_SCALE = 1.9
 
-const OUTLINE = '#31332f'
+const OUTLINE = Colors.onSurface
 const FACE_STROKE = '#9a9a9a'
 const IS_WEB = Platform.OS === 'web'
 // 웹에서만 커서 포인터 (react-native-svg 타입에 style 이 없어 spread 로 우회)

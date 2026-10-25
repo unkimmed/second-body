@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontSize: 12,
-    color: 'rgba(251,249,245,0.7)',
+    color: 'rgba(250,250,250,0.7)',
     marginTop: 2,
   },
   headerRight: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   historyBtn: {
-    backgroundColor: 'rgba(251,249,245,0.15)',
+    backgroundColor: 'rgba(250,250,250,0.15)',
     borderRadius: 9999,
     paddingHorizontal: 12,
     paddingVertical: 5,
@@ -192,6 +192,6 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 11,
-    color: 'rgba(251,249,245,0.6)',
+    color: 'rgba(250,250,250,0.6)',
   },
 })

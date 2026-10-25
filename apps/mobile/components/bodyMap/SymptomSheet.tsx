@@ -15,30 +15,11 @@ import { useRouter } from 'expo-router'
 import { Text } from '@/components/Text'
 import { BodyPartCode, Severity } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_LABELS } from '@/constants/symptom'
-import { Colors, Radius } from '@/constants/theme'
+import { Colors, Radius, SeverityColor, SeverityOnColor } from '@/constants/theme'
 
 // ─── Severity chip colours ────────────────────────────────────────────────────
-const SEV_BG: Record<Severity, string> = {
-  1: '#dcfce7',
-  2: '#ecfccb',
-  3: '#fef9c3',
-  4: '#ffedd5',
-  5: '#fee2e2',
-}
-const SEV_ACTIVE: Record<Severity, string> = {
-  1: '#86efac',
-  2: '#bef264',
-  3: '#fde047',
-  4: '#fb923c',
-  5: '#ef4444',
-}
-const SEV_TEXT: Record<Severity, string> = {
-  1: '#166534',
-  2: '#3f6212',
-  3: '#713f12',
-  4: '#7c2d12',
-  5: '#7f1d1d',
-}
+const SEV_BG = Colors.surfaceContainerHigh
+const SEV_ACTIVE: Record<Severity, string> = SeverityColor
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 interface Props {
@@ -171,14 +152,14 @@ export function SymptomSheet({
                   key={sev}
                   style={[
                     styles.sevChip,
-                    { backgroundColor: active ? SEV_ACTIVE[sev] : SEV_BG[sev] },
+                    { backgroundColor: active ? SEV_ACTIVE[sev] : SEV_BG },
                     active && styles.sevChipActive,
                   ]}
                   onPress={() => setSeverity(sev)}
                   activeOpacity={0.75}
                 >
-                  <Text style={[styles.sevNum, { color: SEV_TEXT[sev] }]}>{sev}</Text>
-                  <Text style={[styles.sevLabel, { color: SEV_TEXT[sev] }]}>
+                  <Text style={[styles.sevNum, { color: active ? SeverityOnColor[sev] : Colors.onSurface }]}>{sev}</Text>
+                  <Text style={[styles.sevLabel, { color: active ? SeverityOnColor[sev] : Colors.onSurfaceVariant }]}>
                     {SEVERITY_LABELS[sev]}
                   </Text>
                 </TouchableOpacity>
@@ -244,7 +225,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(31, 33, 29, 0.4)',
+    backgroundColor: 'rgba(26, 26, 26, 0.4)',
   },
   sheet: {
     backgroundColor: Colors.surface,

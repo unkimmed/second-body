@@ -15,19 +15,25 @@ module.exports = {
       },
       colors: {
         // Surface hierarchy
-        surface: '#f9f8f8',
-        'surface-low': '#ededed',
+        surface: '#fafafa',
+        'surface-low': '#f0f0f0',
         'surface-lowest': '#ffffff',
-        'surface-container': '#f0f0f0',
-        'surface-high': '#e9e8e3',
+        'surface-container': '#f4f4f4',
+        'surface-high': '#e8e8e8',
         // Primary
-        primary: '#456373',
-        'primary-dim': '#395767',
+        primary: '#1a1a1a',
+        'primary-dim': '#000000',
         // On-surface
-        'on-surface': '#31332f',
-        'on-surface-variant': '#5e605b',
+        'on-surface': '#1a1a1a',
+        'on-surface-variant': '#6b6b6b',
         // Outline
-        'outline-variant': '#b2b2ac',
+        'outline-variant': '#c4c4c4',
+        // Severity (1→5, muted red — saturation/depth increases)
+        'severity-1': '#ecd3d0',
+        'severity-2': '#dfaaa5',
+        'severity-3': '#cf7f78',
+        'severity-4': '#bb554d',
+        'severity-5': '#9e3029',
         // Semantic
         danger: '#ef4444',
         warning: '#f59e0b',
