@@ -4,7 +4,7 @@ import { Text } from '@/components/Text'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { BodyPartCode, Severity } from '@second-body/shared'
-import { SEVERITY_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
+import { SEVERITY_LABELS, SEVERITY_COLOR, SEVERITY_TEXT_COLOR } from '@/constants/symptom'
 import { BodyPartSelector } from '@/components/BodyPartSelector'
 import { DateField } from '@/components/DateField'
 import { useAuth } from '@/lib/AuthContext'
@@ -114,7 +114,7 @@ export default function NewRecordScreen() {
               <Text
                 className={
                   severity === s
-                    ? 'text-surface font-bold text-sm'
+                    ? `${SEVERITY_TEXT_COLOR[s]} font-bold text-sm`
                     : 'text-on-surface-variant text-sm'
                 }
               >

@@ -60,11 +60,20 @@ export const BODY_PART_GROUP_LABELS: Record<BodyPartGroupCode, string> = {
 }
 
 export const SEVERITY_COLOR: Record<Severity, string> = {
-  1: 'bg-green-400',
-  2: 'bg-lime-400',
-  3: 'bg-yellow-400',
-  4: 'bg-orange-400',
-  5: 'bg-red-500',
+  1: 'bg-severity-1',
+  2: 'bg-severity-2',
+  3: 'bg-severity-3',
+  4: 'bg-severity-4',
+  5: 'bg-severity-5',
+}
+
+/** 선택된 심각도 칩 위 텍스트 색 (옅은 단계는 어두운 글자) */
+export const SEVERITY_TEXT_COLOR: Record<Severity, string> = {
+  1: 'text-on-surface',
+  2: 'text-on-surface',
+  3: 'text-surface',
+  4: 'text-surface',
+  5: 'text-surface',
 }
 
 export const SEVERITY_LABELS: Record<Severity, string> = {
