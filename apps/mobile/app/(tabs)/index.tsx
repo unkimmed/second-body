@@ -6,7 +6,6 @@ import { useCallback, useMemo, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { DerivedRecord, BodyPartCode, Severity } from '@second-body/shared'
 import { Colors } from '@/constants/theme'
-import { useAuth } from '@/lib/AuthContext'
 import { BodyMapView } from '@/components/bodyMap'
 import { fetchRecords, createRecord, patchRecord, resolveRecord } from '../api/records'
 
@@ -22,14 +21,13 @@ function byRecency(a: DerivedRecord, b: DerivedRecord) {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { userId } = useAuth()
   const [records, setRecords] = useState<DerivedRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   useFocusEffect(
     useCallback(() => {
-      if (userId) loadRecords()
-    }, [userId]),
+      loadRecords()
+    }, []),
   )
 
   async function loadRecords() {
@@ -88,7 +86,7 @@ export default function HomeScreen() {
         console.error('증상 저장 실패:', e)
       }
     },
-    [findActive, userId],
+    [findActive],
   )
 
   const handleResolveSymptom = useCallback(
@@ -102,7 +100,7 @@ export default function HomeScreen() {
         console.error('증상 해결 처리 실패:', e)
       }
     },
-    [findActive, userId],
+    [findActive],
   )
 
   if (loading) {

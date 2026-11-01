@@ -45,6 +45,9 @@ export interface Vault {
   ): Promise<DerivedRecord>
   setResolved(id: string, resolved: boolean): Promise<DerivedRecord>
   deleteRecord(id: string): Promise<void>
+  /** profile.json 이 있는지 (첫 실행 판단용) */
+  hasProfile(): Promise<boolean>
+  /** 없으면 기본값 */
   getProfile(): Promise<ProfileFile>
   saveProfile(
     input: Pick<ProfileFile, 'name' | 'avatar_name' | 'skin_tone' | 'gender'>,
@@ -173,6 +176,10 @@ export function createVault(storage: VaultStorage, clock: () => Date = () => new
 
     async deleteRecord(id) {
       await mutate(id, (f) => appendDelete(f, clock()))
+    },
+
+    async hasProfile() {
+      return (await storage.read(VAULT_PATHS.profile)) !== null
     },
 
     async getProfile() {

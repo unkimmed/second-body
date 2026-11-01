@@ -5,7 +5,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { BodyPartCode, Severity, DerivedRecord } from '@second-body/shared'
 import { SEVERITY_COLOR } from '@/constants/symptom'
-import { useAuth } from '@/lib/AuthContext'
 import { fetchRecord, deleteRecord, patchRecord, resolveRecord } from '../api/records'
 import { RecordDetailCard } from '@/components/RecordDetailCard'
 import { RecordEditForm } from '@/components/RecordEditForm'
@@ -22,7 +21,6 @@ function formatDate(dateStr: string) {
 export default function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
-  const { userId } = useAuth()
   const [record, setRecord] = useState<DerivedRecord | null>(null)
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -38,12 +36,11 @@ export default function RecordDetailScreen() {
   const [resolving, setResolving] = useState(false)
 
   useEffect(() => {
-    if (!userId) return
     fetchRecord(id)
       .then((data) => setRecord(data))
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [id, userId])
+  }, [id])
 
   function startEditing() {
     if (!record) return
@@ -60,7 +57,7 @@ export default function RecordDetailScreen() {
   }
 
   async function saveEdit() {
-    if (!userId || !editBodyPartCode) return
+    if (!editBodyPartCode) return
     setErrorMessage(null)
     setSaving(true)
     try {
@@ -80,7 +77,7 @@ export default function RecordDetailScreen() {
   }
 
   async function toggleResolve() {
-    if (!userId || !record) return
+    if (!record) return
     setErrorMessage(null)
     setResolving(true)
     try {
@@ -95,10 +92,6 @@ export default function RecordDetailScreen() {
   }
 
   async function confirmDelete() {
-    if (!userId) {
-      setErrorMessage('로그인이 필요합니다. 다시 로그인해주세요.')
-      return
-    }
     setDeleting(true)
     try {
       await deleteRecord(id)

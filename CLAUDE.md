@@ -43,26 +43,26 @@ Decision doc: https://claude.ai/artifact/7g6W4LSyhX3kykPo5FMyKd
   3. Later: an E2EE sync server, only for web or mixed-OS use.
 - **`packages/shared`** will grow into platform-independent logic: record format, merge, crypto, sync, and the storage adapter interface. Storage adapters are per platform.
 - **Done so far**: records and profile are read and written locally. Screens go through `apps/mobile/app/api/records.ts` and `apps/mobile/lib/profile.ts`. Those call `vault` in `apps/mobile/lib/vault/`, which is `createVault()` from shared plus a platform adapter: `storage.native.ts` for iOS/Android, `storage.ts` for web.
-- **Still on Supabase**: login/signup (`lib/AuthContext.tsx`) and the profile email. The NestJS API and `lib/config.ts` are no longer used by the app.
+- **No login**: the app has no account and works fully offline. On first launch (no `profile.json`), `app/_layout.tsx` sends the user to `app/onboarding.tsx`.
+- **Leftovers**: the app no longer uses `apps/api` (NestJS), Supabase or `supabase/schema.sql`. They are kept only as a possible base for sync mode 3.
 
 ### Vault format invariants
 
 `packages/shared/src/types/vault.ts` (types) and `packages/shared/src/vault/` (logic and tests) are the source of truth; read them before changing record handling. Existing Supabase data is not migrated.
 
-- One symptom record = one file, `records/<uuidv7>.json`. Its header (`id`, `record_date`, `body_part_code`, `created_at`) never changes.
+- One symptom record = one file, `records/<uuidv7>.json`. Its header (`id`, `record_date`, `body_part_code`, `created_at`) never changes. The header's `body_part_code` is the first part; the current part comes from the last `update`.
 - Every change is appended to `events` (`update` / `resolve` / `reopen` / `delete`). Never edit or remove events.
 - Merge = the union of events by `id`, sorted by `(at, id)`. Current state is derived from the events and never stored.
 - Timestamps are UTC ISO (`toISOString()`). Only `record_date` is a local `YYYY-MM-DD`. Field names are snake_case.
 
 ## Environment Variables
 
+The mobile app needs no environment variables. The legacy API uses these:
+
 | Variable | Used by | Purpose |
 |---|---|---|
 | `SUPABASE_URL` | API | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | API | Server-side full-access key (never expose) |
-| `EXPO_PUBLIC_SUPABASE_URL` | Mobile | Supabase project URL |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Mobile | Client-side anon key |
-| `EXPO_PUBLIC_API_URL` | Mobile | API endpoint (default: `http://localhost:3001/api`) |
 | `PORT` | API | Server port (default: 3001) |
 
 ## pnpm + Expo Web Gotchas

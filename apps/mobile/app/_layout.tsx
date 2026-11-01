@@ -4,26 +4,25 @@ import { StatusBar } from 'expo-status-bar'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
-import { AuthProvider, useAuth } from '../lib/AuthContext'
 import { AppHeader } from '../components/AppHeader'
+import { vault } from '../lib/vault'
 
 SplashScreen.preventAutoHideAsync()
 
 function RootNavigator() {
-  const { session, loading } = useAuth()
   const router = useRouter()
   const segments = useSegments()
 
+  // 프로필이 없으면 첫 실행 → 온보딩
   useEffect(() => {
-    if (loading) return
-    const inAuthScreen = segments[0] === 'login' || segments[0] === 'signup'
-
-    if (!session && !inAuthScreen) {
-      router.replace('/login')
-    } else if (session && inAuthScreen) {
-      router.replace('/')
-    }
-  }, [session, loading])
+    if (segments[0] === 'onboarding') return
+    vault
+      .hasProfile()
+      .then((has) => {
+        if (!has) router.replace('/onboarding')
+      })
+      .catch(console.error)
+  }, [])
 
   return (
     <Stack
@@ -33,8 +32,7 @@ function RootNavigator() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="records/[id]" options={{ title: '기록 상세' }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="signup" options={{ headerShown: false }} />
+      <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
     </Stack>
   )
 }
@@ -51,9 +49,9 @@ export default function RootLayout() {
   if (!fontsLoaded) return null
 
   return (
-    <AuthProvider>
+    <>
       <StatusBar style="auto" />
       <RootNavigator />
-    </AuthProvider>
+    </>
   )
 }

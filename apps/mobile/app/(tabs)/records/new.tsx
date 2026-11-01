@@ -7,13 +7,11 @@ import { BodyPartCode, Severity } from '@second-body/shared'
 import { SEVERITY_LABELS, SEVERITY_COLOR, SEVERITY_TEXT_COLOR } from '@/constants/symptom'
 import { BodyPartSelector } from '@/components/BodyPartSelector'
 import { DateField } from '@/components/DateField'
-import { useAuth } from '@/lib/AuthContext'
 import { createRecord } from '@/app/api/records'
 
 export default function NewRecordScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { userId } = useAuth()
   const [recordDate, setRecordDate] = useState(new Date().toLocaleDateString('en-CA'))
   const [bodyPartCode, setBodyPartCode] = useState<BodyPartCode | null>(null)
   const [severity, setSeverity] = useState<Severity>(3)
@@ -41,10 +39,6 @@ export default function NewRecordScreen() {
     }
     if (!bodyPartCode) {
       setErrorMessage('신체 부위를 선택해주세요.')
-      return
-    }
-    if (!userId) {
-      setErrorMessage('로그인이 필요합니다. 다시 로그인해주세요.')
       return
     }
 
