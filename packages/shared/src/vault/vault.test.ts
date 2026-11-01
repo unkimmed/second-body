@@ -94,6 +94,7 @@ describe('createVault', () => {
   it('프로필: 없으면 기본값, 저장 후 다시 읽기', async () => {
     const storage = createMemoryStorage()
     const vault = createVault(storage, clock)
+    expect(await vault.hasProfile()).toBe(false)
     expect(await vault.getProfile()).toMatchObject({
       name: '',
       skin_tone: 'medium',
@@ -106,6 +107,7 @@ describe('createVault', () => {
       skin_tone: 'light',
       gender: 'female',
     })
+    expect(await vault.hasProfile()).toBe(true)
     expect(await createVault(storage, clock).getProfile()).toMatchObject({
       name: '영채',
       avatar_name: '둘째',

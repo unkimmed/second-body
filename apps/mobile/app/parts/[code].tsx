@@ -5,7 +5,6 @@ import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
 import { BodyPartCode, DerivedRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/symptom'
-import { useAuth } from '@/lib/AuthContext'
 import { fetchRecords } from '@/app/api/records'
 
 function byDateDesc(a: DerivedRecord, b: DerivedRecord) {
@@ -15,18 +14,16 @@ function byDateDesc(a: DerivedRecord, b: DerivedRecord) {
 export default function PartHistoryScreen() {
   const { code } = useLocalSearchParams<{ code: string }>()
   const router = useRouter()
-  const { userId } = useAuth()
   const partCode = code as BodyPartCode
   const [records, setRecords] = useState<DerivedRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) return
     fetchRecords()
       .then((all) => setRecords(all.filter((r) => r.body_part_code === partCode)))
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [userId, partCode])
+  }, [partCode])
 
   const sorted = useMemo(() => [...records].sort(byDateDesc), [records])
   const active = sorted.find((r) => !r.resolved_at)

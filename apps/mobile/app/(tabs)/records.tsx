@@ -6,20 +6,17 @@ import { useRouter } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { DerivedRecord } from '@second-body/shared'
-import { useAuth } from '@/lib/AuthContext'
 import { fetchRecords, resolveRecord } from '../api/records'
 import { RecordCard } from '@/components/RecordCard'
 
 export default function RecordsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { userId } = useAuth()
   const [records, setRecords] = useState<DerivedRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   useFocusEffect(
     useCallback(() => {
-      if (!userId) return
       setLoading(true)
       fetchRecords()
         .then((data) => {
@@ -28,11 +25,10 @@ export default function RecordsScreen() {
         })
         .catch(console.error)
         .finally(() => setLoading(false))
-    }, [userId]),
+    }, []),
   )
 
   async function handleResolve(recordId: string, resolved: boolean) {
-    if (!userId) return
     try {
       const updated = await resolveRecord(recordId, resolved)
       setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))

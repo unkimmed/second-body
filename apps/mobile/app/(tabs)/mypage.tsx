@@ -6,7 +6,6 @@ import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
 import { BodyPartCode, Severity, DerivedRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
-import { useAuth } from '@/lib/AuthContext'
 import { fetchProfile, Profile } from '@/lib/profile'
 import { fetchRecords } from '@/app/api/records'
 
@@ -28,14 +27,12 @@ function byRecency(a: DerivedRecord, b: DerivedRecord) {
 export default function MyPageScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { userId, signOut } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
 
   useFocusEffect(
     useCallback(() => {
-      if (!userId) return
       let alive = true
       ;(async () => {
         try {
@@ -62,7 +59,7 @@ export default function MyPageScreen() {
       return () => {
         alive = false
       }
-    }, [userId]),
+    }, []),
   )
 
   if (loading) {
@@ -73,7 +70,7 @@ export default function MyPageScreen() {
     )
   }
 
-  const initial = (profile?.name || profile?.email || '?').trim().charAt(0).toUpperCase()
+  const initial = (profile?.name || '?').trim().charAt(0).toUpperCase()
   const activeParts = summary?.activeParts ?? []
 
   return (
@@ -90,7 +87,6 @@ export default function MyPageScreen() {
           <Text className="text-surface text-3xl font-bold">{initial}</Text>
         </View>
         <Text className="text-lg font-bold text-on-surface">{profile?.name || '이름 없음'}</Text>
-        <Text className="text-sm text-on-surface-variant mt-0.5">{profile?.email}</Text>
         {profile?.avatarName ? (
           <Text className="text-xs text-on-surface-variant mt-1">
             제2의 나 · {profile.avatarName}
@@ -134,14 +130,6 @@ export default function MyPageScreen() {
           </View>
         )}
       </View>
-
-      {/* 로그아웃 */}
-      <TouchableOpacity
-        onPress={signOut}
-        className="mx-5 mt-8 py-3.5 rounded-2xl items-center border border-outline-variant"
-      >
-        <Text className="text-sm font-medium text-on-surface-variant">로그아웃</Text>
-      </TouchableOpacity>
     </ScrollView>
   )
 }
