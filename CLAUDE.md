@@ -33,6 +33,7 @@ Only `packages/shared` has tests. There is no lint script.
 
 Decision doc: https://claude.ai/artifact/7g6W4LSyhX3kykPo5FMyKd
 
+- **Release order (decided 2026-11-01)**: iOS first (develop, ship to the App Store), then Android, then desktop, then web. Until iOS ships, test and verify on iOS only. Don't spend effort on Android, desktop or web, but don't break the existing web adapter either.
 - **Platforms (one Expo codebase)**: mobile = React Native, web = Expo Web, desktop = the Expo Web build wrapped in Electron. Widgets come later via `expo-widgets`, which needs Expo SDK 56+ (the repo is on SDK 54).
 - **Storage**: one JSON file per symptom record, plus a local index that can be rebuilt from the files at any time.
   - The index starts in memory; `expo-sqlite` comes later.
