@@ -1,9 +1,21 @@
-import { BODY_PART_CODES, BodyPartCode, Severity, SymptomRecord } from '../types/symptom'
+import { BODY_PART_CODES, BodyPartCode, Severity } from '../types/symptom'
 import { RecordEvent, RecordFile, VAULT_SCHEMA_VERSION } from '../types/vault'
 import { uuidv7 } from './uuid'
 
-/** 화면에서 쓰는 기록 모양. 로컬 단일 사용자라 user_id 는 없다. */
-export type DerivedRecord = Omit<SymptomRecord, 'user_id'>
+/** 화면에서 쓰는 기록 모양. 기록 파일의 events 에서 계산한다 (deriveRecord). */
+export interface DerivedRecord {
+  id: string
+  record_date: string
+  /** 현재 부위 (마지막 update) */
+  body_part_code: BodyPartCode
+  severity: Severity
+  note?: string
+  /** 해결 처리된 시각(ISO). null 이면 진행중(미해결) */
+  resolved_at: string | null
+  created_at: string
+  /** 마지막 이벤트 시각 */
+  updated_at: string
+}
 
 /** (at, id) 순 정렬. 같은 시각이면 id 로 순서를 고정해 모든 기기에서 결과가 같게 한다. */
 function compareEvents(a: RecordEvent, b: RecordEvent): number {

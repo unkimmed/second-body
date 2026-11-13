@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import { DerivedRecord } from '@second-body/shared'
-import { fetchRecords, resolveRecord } from '../api/records'
+import { fetchRecords, resolveRecord } from '@/lib/records'
 import { RecordCard } from '@/components/RecordCard'
 
 export default function RecordsScreen() {

@@ -7,7 +7,7 @@ import { useFocusEffect } from 'expo-router'
 import { DerivedRecord, BodyPartCode, Severity } from '@second-body/shared'
 import { Colors } from '@/constants/theme'
 import { BodyMapView } from '@/components/bodyMap'
-import { fetchRecords, createRecord, patchRecord, resolveRecord } from '../api/records'
+import { fetchRecords, createRecord, patchRecord, resolveRecord } from '@/lib/records'
 
 function todayString() {
   return new Date().toLocaleDateString('en-CA')

@@ -4,13 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Second Body** is a health symptom tracking app. It is a `pnpm` workspace monorepo with three packages:
+**Second Body** is a health symptom tracking app. It is a `pnpm` workspace monorepo with two packages:
 
 - `apps/mobile`: the Expo app (React Native for mobile, Expo Web for web)
-- `apps/api`: a NestJS API
-- `packages/shared`: shared types and constants
+- `packages/shared`: shared types, constants and the platform-independent vault logic
 
-**Direction (decided 2026-10-25): moving to Obsidian-style local-first storage.** Records will live as JSON files on the user's device, not in Supabase. The current code still uses Supabase + NestJS while the migration is in progress. Don't build new features on Supabase, the API or the DB.
+**Obsidian-style local-first storage (decided 2026-10-25).** Records live as JSON files on the user's device. There is no server, account or login, and the app works fully offline. The former NestJS API and Supabase DB were removed in MOM-35; they remain in git history only.
 
 ## Commands
 
@@ -21,15 +20,13 @@ pnpm mobile          # Expo dev server (React Native)
 pnpm mobile:ios      # Run on iOS simulator
 pnpm mobile:android  # Run on Android emulator
 pnpm mobile:web      # Expo web dev server (http://localhost:8081)
-pnpm api             # NestJS API in watch mode
-pnpm api:build       # Build API for production
 pnpm shared:build    # Compile shared package (run after changes, before apps can pick them up)
 pnpm shared:test     # Run shared package tests (vitest)
 ```
 
-Only `packages/shared` has tests. There is no lint script.
+Only `packages/shared` has tests. There is no lint script. CI (`.github/workflows/ci.yml`) builds and tests shared, then type-checks mobile.
 
-## Local-first migration
+## Local-first architecture
 
 Decision doc: https://claude.ai/artifact/7g6W4LSyhX3kykPo5FMyKd
 
@@ -43,28 +40,17 @@ Decision doc: https://claude.ai/artifact/7g6W4LSyhX3kykPo5FMyKd
   2. Folder sync through the user's own iCloud Drive or Dropbox.
   3. Later: an E2EE sync server, only for web or mixed-OS use.
 - **`packages/shared`** will grow into platform-independent logic: record format, merge, crypto, sync, and the storage adapter interface. Storage adapters are per platform.
-- **Done so far**: records and profile are read and written locally. Screens go through `apps/mobile/app/api/records.ts` and `apps/mobile/lib/profile.ts`. Those call `vault` in `apps/mobile/lib/vault/`, which is `createVault()` from shared plus a platform adapter: `storage.native.ts` for iOS/Android, `storage.ts` for web.
-- **No login**: the app has no account and works fully offline. On first launch (no `profile.json`), `app/_layout.tsx` sends the user to `app/onboarding.tsx`.
-- **Leftovers**: the app no longer uses `apps/api` (NestJS), Supabase or `supabase/schema.sql`. They are kept only as a possible base for sync mode 3.
+- **Data path**: screens call `apps/mobile/lib/records.ts` and `apps/mobile/lib/profile.ts`. Those call `vault` in `apps/mobile/lib/vault/`, which is `createVault()` from shared plus a platform adapter: `storage.native.ts` for iOS/Android, `storage.ts` for web. Keep non-route modules out of `app/`, because expo-router treats every file there as a route.
+- **First launch**: when there is no `profile.json`, `app/_layout.tsx` sends the user to `app/onboarding.tsx`.
 
 ### Vault format invariants
 
-`packages/shared/src/types/vault.ts` (types) and `packages/shared/src/vault/` (logic and tests) are the source of truth; read them before changing record handling. Existing Supabase data is not migrated.
+`packages/shared/src/types/vault.ts` (types) and `packages/shared/src/vault/` (logic and tests) are the source of truth; read them before changing record handling.
 
 - One symptom record = one file, `records/<uuidv7>.json`. Its header (`id`, `record_date`, `body_part_code`, `created_at`) never changes. The header's `body_part_code` is the first part; the current part comes from the last `update`.
 - Every change is appended to `events` (`update` / `resolve` / `reopen` / `delete`). Never edit or remove events.
 - Merge = the union of events by `id`, sorted by `(at, id)`. Current state is derived from the events and never stored.
 - Timestamps are UTC ISO (`toISOString()`). Only `record_date` is a local `YYYY-MM-DD`. Field names are snake_case.
-
-## Environment Variables
-
-The mobile app needs no environment variables. The legacy API uses these:
-
-| Variable | Used by | Purpose |
-|---|---|---|
-| `SUPABASE_URL` | API | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | API | Server-side full-access key (never expose) |
-| `PORT` | API | Server port (default: 3001) |
 
 ## pnpm + Expo Web Gotchas
 

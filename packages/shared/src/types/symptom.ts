@@ -85,48 +85,4 @@ export const BODY_PART_TO_GROUP = Object.fromEntries(
   ),
 ) as Record<BodyPartCode, Exclude<BodyPartGroupCode, 'body'>>
 
-// body_parts 마스터 테이블 전체 (L1+L2+L3 = 44개)
-export type AnyBodyPartCode = BodyPartCode | BodyPartGroupCode
-
-export type BodyPartLevel = 1 | 2 | 3
-export type BodyPartSide = 'left' | 'right' | 'center'
-
 export type Severity = 1 | 2 | 3 | 4 | 5
-
-export interface BodyPart {
-  code: AnyBodyPartCode
-  name_ko: string
-  level: BodyPartLevel
-  parent_code: AnyBodyPartCode | null
-  side: BodyPartSide | null
-  svg_path_id: string | null
-  display_order: number
-}
-
-export interface SymptomRecord {
-  id: string
-  user_id: string
-  record_date: string
-  body_part_code: BodyPartCode
-  severity: Severity
-  note?: string
-  /** 해결 처리된 시각(ISO). null/undefined 이면 진행중(미해결) */
-  resolved_at?: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface CreateSymptomRecordDto {
-  record_date: string
-  body_part_code: BodyPartCode
-  severity: Severity
-  note?: string
-}
-
-export interface UpdateSymptomRecordDto {
-  body_part_code?: BodyPartCode
-  severity?: Severity
-  note?: string
-  /** true → 해결 처리(resolved_at = now), false → 다시 진행중(resolved_at = null) */
-  resolved?: boolean
-}
