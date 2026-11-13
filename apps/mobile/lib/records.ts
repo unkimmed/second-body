@@ -1,7 +1,7 @@
-import { BodyPartCode, CreateSymptomRecordDto, DerivedRecord, Severity } from '@second-body/shared'
+import { BodyPartCode, DerivedRecord, Severity } from '@second-body/shared'
 import { vault } from '@/lib/vault'
 
-// 기록은 기기 로컬 vault 에 저장한다 (서버 API 를 쓰지 않음)
+// 기록은 기기 로컬 vault 에 저장한다
 
 export async function fetchRecords(): Promise<DerivedRecord[]> {
   return vault.listRecords()
@@ -13,7 +13,12 @@ export async function fetchRecord(id: string): Promise<DerivedRecord> {
   return record
 }
 
-export async function createRecord(payload: CreateSymptomRecordDto): Promise<DerivedRecord> {
+export async function createRecord(payload: {
+  record_date: string
+  body_part_code: BodyPartCode
+  severity: Severity
+  note?: string
+}): Promise<DerivedRecord> {
   return vault.createRecord(payload)
 }
 

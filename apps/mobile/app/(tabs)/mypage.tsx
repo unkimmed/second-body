@@ -7,7 +7,7 @@ import { Colors } from '@/constants/theme'
 import { BodyPartCode, Severity, DerivedRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR } from '@/constants/symptom'
 import { fetchProfile, Profile } from '@/lib/profile'
-import { fetchRecords } from '@/app/api/records'
+import { fetchRecords } from '@/lib/records'
 
 interface ActivePart {
   code: BodyPartCode

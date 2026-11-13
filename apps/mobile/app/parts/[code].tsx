@@ -5,7 +5,7 @@ import { Text } from '@/components/Text'
 import { Colors } from '@/constants/theme'
 import { BodyPartCode, DerivedRecord } from '@second-body/shared'
 import { BODY_PART_LABELS, SEVERITY_COLOR, SEVERITY_LABELS } from '@/constants/symptom'
-import { fetchRecords } from '@/app/api/records'
+import { fetchRecords } from '@/lib/records'
 
 function byDateDesc(a: DerivedRecord, b: DerivedRecord) {
   return b.record_date.localeCompare(a.record_date) || b.created_at.localeCompare(a.created_at)

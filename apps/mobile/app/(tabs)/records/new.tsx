@@ -7,7 +7,7 @@ import { BodyPartCode, Severity } from '@second-body/shared'
 import { SEVERITY_LABELS, SEVERITY_COLOR, SEVERITY_TEXT_COLOR } from '@/constants/symptom'
 import { BodyPartSelector } from '@/components/BodyPartSelector'
 import { DateField } from '@/components/DateField'
-import { createRecord } from '@/app/api/records'
+import { createRecord } from '@/lib/records'
 
 export default function NewRecordScreen() {
   const insets = useSafeAreaInsets()
